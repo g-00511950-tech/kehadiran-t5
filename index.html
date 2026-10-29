@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Kehadiran Kelas Tambahan T5 Online v12</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; padding-bottom: 0 !important; }
+            main { padding: 0 !important; }
+            .one-page-report { page-break-inside: avoid; font-size: 11px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-20 flex flex-col justify-between">
+
+    <!-- Loading Indicator Sync -->
+    <div id="syncLoader" class="fixed top-2 right-2 z-50 bg-indigo-900 text-white text-[10px] px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 hidden">
+        <i class="fa-solid fa-spinner fa-spin"></i> Menyegarkan Data Cloud...
+    </div>
+
+    <div>
+        <!-- Header / Tajuk & Logo Sekolah -->
+        <header class="bg-indigo-700 text-white shadow-md p-4 sticky top-0 z-40">
+            <div class="max-w-4xl mx-auto flex justify-between items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <img id="schoolLogo" src="https://via.placeholder.com/80/ffffff/4f46e5?text=LOGO" alt="Logo Sekolah" class="w-12 h-12 rounded-lg bg-white p-1 object-contain shadow-sm border border-indigo-200">
+                    <div>
+                        <h1 id="schoolName" class="text-base font-extrabold tracking-wide uppercase">SMK ZAPIN 1</h1>
+                        <p id="appTitle" class="text-xs text-indigo-100 font-medium">Sistem Kehadiran Kelas Tambahan T5</p>
+                    </div>
+                </div>
+                <div class="text-right text-xs bg-indigo-800 py-1.5 px-3 rounded-lg border border-indigo-600 shrink-0">
+                    <div id="currentDateDisplay" class="font-semibold"></div>
+                    <div id="activeSlotDisplay" class="text-indigo-200 font-bold">Slot 1</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Bar Pemilihan Fasa Program -->
+        <div class="bg-indigo-900 text-white py-2 px-4 shadow-inner no-print">
+            <div class="max-w-4xl mx-auto flex items-center justify-between gap-2 flex-wrap text-xs">
+                <span class="font-bold flex items-center gap-1 text-indigo-200">
+                    <i class="fa-solid fa-layer-group"></i> Fasa Program Aktif:
+                </span>
+                <select id="globalPhaseSelect" onchange="changeGlobalPhase(this.value)" class="bg-indigo-800 text-white font-bold px-3 py-1 rounded border border-indigo-600 focus:outline-none">
+                </select>
+            </div>
+        </div>
+
+        <!-- Navigation Bar Utama -->
+        <nav class="bg-white border-b border-slate-200 sticky top-[68px] z-30 shadow-sm no-print">
+            <div class="max-w-4xl mx-auto flex justify-around">
+                <button onclick="switchTab('pelajar')" id="tabPelajar" class="flex-1 py-3 text-center font-medium text-sm border-b-2 border-indigo-600 text-indigo-600 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-check"></i> Mod Kelas
+                </button>
+                <button onclick="switchTab('analisis')" id="tabAnalisis" class="flex-1 py-3 text-center font-medium text-sm border-b-2 border-transparent text-slate-500 hover:text-indigo-600 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-chart-pie"></i> Analisis & Laporan
+                </button>
+                <button onclick="switchTab('admin')" id="tabAdmin" class="flex-1 py-3 text-center font-medium text-sm border-b-2 border-transparent text-slate-500 hover:text-indigo-600 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-gear"></i> Admin
+                </button>
+            </div>
+        </nav>
+
+        <!-- Kandungan Utama -->
+        <main class="max-w-4xl mx-auto p-4">
+
+            <!-- TAB 1: MOD KETUA KELAS / PELAJAR -->
+            <section id="secPelajar" class="space-y-4">
+                <div class="bg-indigo-50 p-3.5 rounded-xl border border-indigo-100 flex items-center justify-between flex-wrap gap-2">
+                    <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-calendar-day"></i> Tarikh Semakan Kehadiran:
+                    </span>
+                    <input type="date" id="attendanceInputDate" onchange="changeAttendanceDate()" class="text-xs border border-indigo-300 rounded-lg p-1.5 font-semibold bg-white">
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">1. Pilih Slot Waktu Kelas Tambahan:</label>
+                    <div id="slotListBtns" class="grid grid-cols-1 sm:grid-cols-3 gap-2"></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 space-y-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">2. Pilih Kelas:</label>
+                    <div id="classListBtns" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <div id="studentListContainer" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-3">
+                        <div>
+                            <h2 id="selectedClassName" class="font-bold text-lg text-slate-800">Sila Pilih Kelas</h2>
+                            <div class="flex items-center gap-2 mt-1">
+                                <label class="text-xs font-bold text-slate-600">Matapelajaran:</label>
+                                <select id="subjectSelectForSession" onchange="updateSelectedSubjectForSession(this.value)" class="text-xs border border-indigo-300 rounded-md p-1 font-semibold text-indigo-700 bg-white focus:outline-none">
+                                </select>
+                            </div>
+                        </div>
+                        <span id="attendanceSummaryBadge" class="text-xs bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-medium">0 Ditanda</span>
+                    </div>
+
+                    <div id="studentList" class="divide-y divide-slate-100 p-2">
+                        <p class="text-center text-slate-400 py-8 text-sm">Sila pilih Slot Waktu dan Kelas di atas.</p>
+                    </div>
+
+                    <div class="p-4 bg-slate-50 border-t border-slate-200 text-right no-print">
+                        <button onclick="confirmAndSaveAttendance()" id="btnSaveAttendance" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-lg shadow-sm text-sm transition-all flex items-center gap-2 ml-auto disabled:opacity-50" disabled>
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan & Hantar Kehadiran
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: ANALISIS & LAPORAN -->
+            <section id="secAnalisis" class="space-y-4 hidden one-page-report">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 no-print">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-filter text-indigo-600"></i> Penapis Analisis & Laporan
+                        </h2>
+                        <button onclick="triggerPrint()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3.5 py-2 rounded-lg font-medium flex items-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-print"></i> Cetak Laporan 1 Muka Surat
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs items-end">
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Jenis Laporan:</label>
+                            <select id="reportTypeFilter" onchange="toggleReportTypeUI()" class="w-full border border-slate-300 rounded-lg p-2 font-semibold">
+                                <option value="daily">Laporan Harian (Back-Dated)</option>
+                                <option value="monthly">Laporan Bulanan Keseluruhan</option>
+                                <option value="class_detail">Laporan Bulanan Terperinci Pelajar (Mengikut Kelas)</option>
+                            </select>
+                        </div>
+
+                        <div id="dailyFilterContainer">
+                            <label class="block font-medium text-slate-600 mb-1">Tarikh Rekod:</label>
+                            <input type="date" id="analysisDateFilter" class="w-full border border-slate-300 rounded-lg p-2 font-semibold">
+                        </div>
+
+                        <div id="monthlyFilterContainer" class="hidden">
+                            <label class="block font-medium text-slate-600 mb-1">Bulan & Tahun:</label>
+                            <input type="month" id="analysisMonthFilter" class="w-full border border-slate-300 rounded-lg p-2 font-semibold">
+                        </div>
+
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Pilih Kelas:</label>
+                            <select id="analysisClassFilter" class="w-full border border-slate-300 rounded-lg p-2 font-semibold">
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block font-medium text-slate-600 mb-1">Matapelajaran:</label>
+                            <select id="analysisSubjectFilter" class="w-full border border-slate-300 rounded-lg p-2 font-semibold">
+                            </select>
+                        </div>
+
+                        <div>
+                            <button onclick="renderAnalytics()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2 rounded-lg flex items-center justify-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-magnifying-glass"></i> Cari Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="printableReportArea">
+                    <div class="text-center border-b-2 border-slate-800 pb-2 mb-3">
+                        <img id="printLogo" src="" alt="Logo" class="w-12 h-12 mx-auto mb-1 object-contain">
+                        <h1 id="printSchoolName" class="text-base font-bold uppercase tracking-wide"></h1>
+                        <p id="printAppTitle" class="text-xs font-medium text-slate-600"></p>
+                        <p class="text-xs font-bold text-indigo-700 mt-1 uppercase" id="printPhaseTitle"></p>
+                        <p class="text-xs font-bold text-slate-800 mt-0.5 uppercase" id="printReportHeadline">LAPORAN ANALISIS KEHADIRAN</p>
+                        <p class="text-[11px] text-slate-500" id="printReportSubline"></p>
+                    </div>
+
+                    <!-- Kad Statistik Ringkas -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
+                            <div class="text-[11px] text-slate-500 font-medium">Jumlah Enrolmen</div>
+                            <div id="statTotal" class="text-xl font-bold text-slate-800 mt-0.5">0</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
+                            <div class="text-[11px] text-emerald-600 font-medium" id="lblStatHadir">Hadir</div>
+                            <div id="statHadir" class="text-xl font-bold text-emerald-600 mt-0.5">0</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
+                            <div class="text-[11px] text-rose-600 font-medium" id="lblStatTidakHadir">Tidak Hadir</div>
+                            <div id="statTidakHadir" class="text-xl font-bold text-rose-600 mt-0.5">0</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
+                            <div class="text-[11px] text-indigo-600 font-medium">Peratus Kehadiran</div>
+                            <div id="statPeratus" class="text-xl font-bold text-indigo-600 mt-0.5">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- BUKAN CARTA ANALISIS VISUAL -->
+                    <div id="visualChartContainer" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-3 space-y-2">
+                        <h3 class="font-bold text-xs text-indigo-900 border-b pb-1 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chart-column text-indigo-600"></i> Carta Visual Analisis Kehadiran Mengikut Kelas</span>
+                            <span class="text-[10px] text-slate-400 font-normal">Penanda Aras: 80%+ Cemerlang</span>
+                        </h3>
+                        <div id="visualBarChart" class="space-y-2 pt-1"></div>
+                    </div>
+
+                    <!-- PAPARAN STANDARD ANALISIS -->
+                    <div id="standardAnalyticsView" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                            <h3 class="font-bold text-xs text-slate-700 border-b pb-1" id="classAnalysisHeader">Peratus Kehadiran Mengikut Kelas</h3>
+                            <div id="classBreakdownList" class="space-y-2"></div>
+                        </div>
+
+                        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                            <h3 class="font-bold text-xs text-slate-700 border-b pb-1" id="reasonAnalysisHeader">Pecahan Alasan Pelajar Tidak Hadir</h3>
+                            <div id="reasonBreakdownList" class="space-y-1.5 text-xs"></div>
+                        </div>
+                    </div>
+
+                    <!-- PAPARAN TERPERINCI SENARAI PELAJAR -->
+                    <div id="detailedClassAnalyticsView" class="hidden bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                        <h3 class="font-bold text-xs text-slate-700 border-b pb-2 flex justify-between items-center">
+                            <span id="detailedTableTitle">Rekod Kehadiran Individu Pelajar</span>
+                            <span id="detailedClassTitle" class="text-indigo-600 font-extrabold"></span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 border-b">
+                                        <th class="p-2 w-8">No</th>
+                                        <th class="p-2">Nama Pelajar</th>
+                                        <th class="p-2 text-center w-24">Status</th>
+                                        <th class="p-2 w-48" id="thReasonHeader">Sebab Tidak Hadir / Catatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentDetailedTableBody" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 mt-4 border-t border-slate-300">
+                        <div class="flex justify-between text-xs text-slate-700">
+                            <div>
+                                <p>Disediakan oleh:</p>
+                                <div class="h-10"></div>
+                                <p>___________________________</p>
+                                <p class="font-bold">(Penyelaras Kelas Tambahan SPM)</p>
+                            </div>
+                            <div>
+                                <p>Disahkan oleh:</p>
+                                <div class="h-10"></div>
+                                <p>___________________________</p>
+                                <p class="font-bold">(Pengetua / PK Pentadbiran)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: TETAPAN ADMIN -->
+            <section id="secAdmin" class="space-y-4 hidden">
+                <div id="adminLockScreen" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm text-center max-w-md mx-auto space-y-4 my-8">
+                    <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Akses Mod Admin</h2>
+                        <p class="text-xs text-slate-500 mt-1">Masukkan PIN keselamatan untuk mengubah tetapan.</p>
+                    </div>
+                    <div class="space-y-2">
+                        <input type="password" id="inputAdminPin" placeholder="Masukkan PIN (Default: 1234)" class="w-full text-center text-lg tracking-widest border border-slate-300 rounded-lg py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <p id="pinErrorMsg" class="text-xs text-rose-500 hidden font-medium">PIN Salah! Sila cuba lagi.</p>
+                    </div>
+                    <button onclick="verifyAdminPin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm transition-all shadow-sm">
+                        Log Masuk Admin
+                    </button>
+                </div>
+
+                <div id="adminPanelContent" class="space-y-4 hidden">
+                    <div class="flex justify-between items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                        <div>
+                            <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Status: Admin Aktif</span>
+                            <h2 class="font-bold text-slate-800 text-base">Panel Kawalan Pentadbir</h2>
+                        </div>
+                        <button onclick="lockAdmin()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm transition-all">
+                            <i class="fa-solid fa-right-from-bracket"></i> Log Keluar Admin
+                        </button>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-indigo-600"></i> Pengurusan Fasa Program SPM
+                        </h3>
+                        <div id="adminPhaseList" class="space-y-2"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="newPhaseName" placeholder="Nama Fasa Baharu (Cth: Fasa 3: Pecutan Akhir)" class="text-xs border border-slate-300 rounded p-2 flex-1">
+                            <button onclick="addNewPhase()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Fasa</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-users-line text-indigo-600"></i> Tambah Nama Pelajar Secara Pukal (Bulk Import)
+                        </h3>
+                        <p class="text-xs text-slate-500">Copy & Paste senarai nama dari Excel/Word (satu nama setiap baris):</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <select id="bulkImportClassSelect" class="text-xs border border-slate-300 rounded p-2 font-bold"></select>
+                            <textarea id="bulkImportTextarea" rows="4" placeholder="Contoh:&#10;AHMAD ALBAM BIN ZULKIFLI&#10;SITI NURHALIZA BINTI ABU" class="sm:col-span-2 text-xs border border-slate-300 rounded p-2"></textarea>
+                        </div>
+                        <button onclick="executeBulkImport()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded font-bold transition-all">+ Tambah Semua Nama Ke Kelas</button>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <h3 class="font-bold text-sm text-slate-700">Pengurusan Senarai Nama Pelajar (Edit / Padam)</h3>
+                            <select id="adminFilterStudentClass" onchange="renderAdminStudentManagementList()" class="text-xs border border-slate-300 rounded p-1 font-bold"></select>
+                        </div>
+                        <div id="adminStudentManagementList" class="space-y-1.5 max-h-60 overflow-y-auto p-1"></div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-book text-indigo-600"></i> Pengurusan Senarai Matapelajaran SPM
+                        </h3>
+                        <div id="adminSubjectList" class="space-y-2"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="newSubjectName" placeholder="Nama Matapelajaran Baharu" class="text-xs border border-slate-300 rounded p-2 flex-1">
+                            <button onclick="addNewSubject()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Subjek</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-slate-700 border-b pb-2">Identiti Sekolah</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label class="block font-medium text-slate-600 mb-1">Nama Sekolah:</label>
+                                <input type="text" id="cfgSchoolName" class="w-full border border-slate-300 rounded p-2">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-600 mb-1">Tajuk Utama Sistem:</label>
+                                <input type="text" id="cfgAppTitle" class="w-full border border-slate-300 rounded p-2">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block font-medium text-slate-600 mb-1">Pautan Logo Sekolah (Image URL):</label>
+                                <input type="text" id="cfgSchoolLogo" class="w-full border border-slate-300 rounded p-2">
+                            </div>
+                        </div>
+                        <button onclick="saveIdentitySettings()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-indigo-700">Simpan Profil Sekolah</button>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-slate-700 border-b pb-2">Pengurusan Kelas</h3>
+                        <div class="flex gap-2">
+                            <input type="text" id="newClassName" placeholder="Nama Kelas Baharu" class="flex-1 text-xs border border-slate-300 rounded p-2">
+                            <button onclick="addClass()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Kelas</button>
+                        </div>
+                        <div id="adminClassList" class="space-y-2 mt-2"></div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-slate-700 border-b pb-2">Tukar PIN Admin</h3>
+                        <div class="flex gap-2 max-w-xs">
+                            <input type="password" id="newPinInput" placeholder="PIN Baharu" class="text-xs border border-slate-300 rounded p-2 flex-1">
+                            <button onclick="changeAdminPin()" class="bg-slate-800 text-white text-xs px-3 py-2 rounded font-medium hover:bg-slate-900">Kemaskini PIN</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="confirmationModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-4">
+            <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">Kehadiran Berjaya Dihantar!</h3>
+                <p class="text-xs text-slate-500 mt-1">Maklumat kehadiran telah disahkan dan disimpan di Cloud.</p>
+            </div>
+            
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-left space-y-1.5">
+                <div class="flex justify-between"><span class="text-slate-500">Fasa:</span> <span id="popPhase" class="font-bold text-indigo-700"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Tarikh:</span> <span id="popDate" class="font-bold"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Slot Waktu:</span> <span id="popSlot" class="font-bold"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Kelas:</span> <span id="popClass" class="font-bold"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Matapelajaran:</span> <span id="popSubject" class="font-bold text-indigo-600"></span></div>
+                <div class="border-t pt-1 flex justify-between"><span class="text-slate-500">Jumlah Pelajar Hadir:</span> <span id="popHadir" class="font-bold text-emerald-600"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Jumlah Tidak Hadir:</span> <span id="popTidakHadir" class="font-bold text-rose-600"></span></div>
+            </div>
+
+            <button onclick="closeConfirmationModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition-all shadow-sm">
+                Selesai & Kembali
+            </button>
+        </div>
+    </div>
+
+    <!-- JS Logic Online Sync -->
+    <script>
+        // PASTE WEB APP URL GOOGLE APPS SCRIPT ANDA DI SINI
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEOWWAYq8HJWV7nIP_Ql6QXBmkoVLB-NBNBHdDVnbnK3k97hCr8rn8Po6dKun1hhlEIw/exec";
+
+        const DEFAULT_DATA = {
+            schoolName: "SMK ZAPIN 1",
+            appTitle: "Sistem Kehadiran Kelas Tambahan T5",
+            schoolLogo: "https://via.placeholder.com/80/ffffff/4f46e5?text=LOGO",
+            adminPin: "1234",
+            activePhaseId: "p1",
+            phases: [
+                { id: "p1", name: "Fasa 1: Pecutan Gemilang" },
+                { id: "p2", name: "Fasa 2: Anjakan Intensif SPM" }
+            ],
+            slots: [
+                { id: "slot_1", name: "Slot 1", time: "2:30 PM - 3:30 PM" },
+                { id: "slot_2", name: "Slot 2", time: "3:30 PM - 4:30 PM" },
+                { id: "slot_3", name: "Slot 3", time: "8:00 PM - 9:30 PM" }
+            ],
+            classes: [
+                { id: "c1", name: "5 STEM" },
+                { id: "c2", name: "5 Kemanusiaan" }
+            ],
+            allSubjects: [
+                "Semua Matapelajaran", "Bahasa Melayu", "Bahasa Inggeris", "Sejarah", "Matematik", 
+                "Pendidikan Islam", "Matematik Tambahan", "Fizik", "Kimia", "Biologi", "Prinsip Perakaunan"
+            ],
+            selectedSessionSubjects: {},
+            students: [
+                { id: "s1", classId: "c1", name: "Ahmad Albab Bin Zulkifli" },
+                { id: "s2", classId: "c1", name: "Siti Nurhaliza Binti Abu" },
+                { id: "s3", classId: "c2", name: "Muhammad Ali Bin Hassan" },
+                { id: "s4", classId: "c2", name: "Nur Aisyah Binti Othman" }
+            ],
+            attendanceRecords: {}
+        };
+
+        let appData = JSON.parse(localStorage.getItem('kehadiran_t5_online')) || DEFAULT_DATA;
+        let selectedSlotId = appData.slots[0]?.id || "slot_1";
+        let selectedClassId = appData.classes[0]?.id || "c1";
+
+        function saveData() {
+            localStorage.setItem('kehadiran_t5_online', JSON.stringify(appData));
+            if(GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "MASUKKAN_URL_WEB_APP_ANDA_DI_SINI") {
+                document.getElementById('syncLoader').classList.remove('hidden');
+                fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(appData)
+                }).then(() => {
+                    setTimeout(() => document.getElementById('syncLoader').classList.add('hidden'), 1000);
+                }).catch(err => {
+                    console.log("Cloud sync error:", err);
+                    document.getElementById('syncLoader').classList.add('hidden');
+                });
+            }
+        }
+
+        function fetchCloudData() {
+            if(GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== "MASUKKAN_URL_WEB_APP_ANDA_DI_SINI") {
+                document.getElementById('syncLoader').classList.remove('hidden');
+                fetch(GOOGLE_SCRIPT_URL + "?action=getData")
+                .then(res => res.json())
+                .then(cloudData => {
+                    if(cloudData && Object.keys(cloudData).length > 0) {
+                        appData = cloudData;
+                        localStorage.setItem('kehadiran_t5_online', JSON.stringify(appData));
+                        renderIdentity();
+                        renderGlobalPhaseDropdown();
+                        renderSlotButtons();
+                        renderClassButtons();
+                        renderStudentList();
+                    }
+                    document.getElementById('syncLoader').classList.add('hidden');
+                })
+                .catch(err => {
+                    console.log("Fetch error:", err);
+                    document.getElementById('syncLoader').classList.add('hidden');
+                });
+            }
+        }
+
+        window.onload = function() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const currentMonthStr = todayStr.substring(0, 7);
+
+            document.getElementById('attendanceInputDate').value = todayStr;
+            document.getElementById('analysisDateFilter').value = todayStr;
+            document.getElementById('analysisMonthFilter').value = currentMonthStr;
+
+            renderIdentity();
+            renderGlobalPhaseDropdown();
+            updateCurrentDateHeaderDisplay();
+            renderSlotButtons();
+            renderClassButtons();
+            renderStudentList();
+            populateAdminDropdowns();
+            renderAdminClassList();
+
+            fetchCloudData();
+        };
+
+        function renderGlobalPhaseDropdown() {
+            const sel = document.getElementById('globalPhaseSelect');
+            sel.innerHTML = '';
+            appData.phases.forEach(p => {
+                sel.innerHTML += `<option value="${p.id}" ${p.id === appData.activePhaseId ? 'selected' : ''}>${p.name}</option>`;
+            });
+        }
+
+        function changeGlobalPhase(phaseId) {
+            appData.activePhaseId = phaseId;
+            saveData();
+            renderStudentList();
+            renderAdminPhaseList();
+        }
+
+        function updateCurrentDateHeaderDisplay() {
+            const inputVal = document.getElementById('attendanceInputDate').value;
+            if(inputVal) {
+                const dateObj = new Date(inputVal);
+                document.getElementById('currentDateDisplay').innerText = dateObj.toLocaleDateString('ms-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+            }
+        }
+
+        function changeAttendanceDate() {
+            updateCurrentDateHeaderDisplay();
+            renderStudentList();
+        }
+
+        function renderIdentity() {
+            document.getElementById('schoolName').innerText = appData.schoolName || "SMK ZAPIN 1";
+            document.getElementById('appTitle').innerText = appData.appTitle || "Sistem Kehadiran Kelas Tambahan T5";
+            if (appData.schoolLogo) document.getElementById('schoolLogo').src = appData.schoolLogo;
+        }
+
+        function switchTab(tab) {
+            ['secPelajar', 'secAnalisis', 'secAdmin'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            ['tabPelajar', 'tabAnalisis', 'tabAdmin'].forEach(id => {
+                const el = document.getElementById(id);
+                el.classList.remove('border-indigo-600', 'text-indigo-600');
+                el.classList.add('border-transparent', 'text-slate-500');
+            });
+
+            if(tab === 'pelajar') {
+                document.getElementById('secPelajar').classList.remove('hidden');
+                document.getElementById('tabPelajar').classList.add('border-indigo-600', 'text-indigo-600');
+            } else if(tab === 'analisis') {
+                document.getElementById('secAnalisis').classList.remove('hidden');
+                document.getElementById('tabAnalisis').classList.add('border-indigo-600', 'text-indigo-600');
+                populateAnalysisFilter();
+            } else if(tab === 'admin') {
+                document.getElementById('secAdmin').classList.remove('hidden');
+                document.getElementById('tabAdmin').classList.add('border-indigo-600', 'text-indigo-600');
+            }
+        }
+
+        function renderSlotButtons() {
+            const container = document.getElementById('slotListBtns');
+            container.innerHTML = '';
+            appData.slots.forEach(s => {
+                const isSelected = s.id === selectedSlotId;
+                const btn = document.createElement('button');
+                btn.className = `p-2.5 rounded-xl border text-left transition-all ${isSelected ? 'bg-indigo-50 border-indigo-600 ring-2 ring-indigo-500/20' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`;
+                btn.onclick = () => { selectedSlotId = s.id; renderSlotButtons(); renderStudentList(); };
+                btn.innerHTML = `
+                    <div class="text-xs font-bold ${isSelected ? 'text-indigo-700' : 'text-slate-700'}">${s.name}</div>
+                    <div class="text-[11px] text-slate-500">${s.time}</div>
+                `;
+                container.appendChild(btn);
+            });
+            const activeSlot = appData.slots.find(s => s.id === selectedSlotId);
+            if(activeSlot) document.getElementById('activeSlotDisplay').innerText = activeSlot.name;
+        }
+
+        function renderClassButtons() {
+            const container = document.getElementById('classListBtns');
+            container.innerHTML = '';
+            appData.classes.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 rounded-lg text-xs font-semibold transition-all ${c.id === selectedClassId ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`;
+                btn.innerText = c.name;
+                btn.onclick = () => { selectedClassId = c.id; renderClassButtons(); renderStudentList(); };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderStudentList() {
+            const container = document.getElementById('studentList');
+            const cls = appData.classes.find(c => c.id === selectedClassId);
+            const slot = appData.slots.find(s => s.id === selectedSlotId);
+
+            if (!cls || !slot) {
+                container.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">Sila pilih Slot Waktu dan Kelas.</p>`;
+                return;
+            }
+
+            document.getElementById('selectedClassName').innerText = `${cls.name} (${slot.name}: ${slot.time})`;
+
+            const selectedDateKey = document.getElementById('attendanceInputDate').value;
+            const sessionKey = `${appData.activePhaseId}_${selectedDateKey}_${selectedSlotId}_${selectedClassId}`;
+            const currentSubj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1] || "Bahasa Melayu";
+
+            const subjDropdown = document.getElementById('subjectSelectForSession');
+            subjDropdown.innerHTML = '';
+            appData.allSubjects.filter(sb => sb !== 'Semua Matapelajaran').forEach(sb => {
+                subjDropdown.innerHTML += `<option value="${sb}" ${sb === currentSubj ? 'selected' : ''}>${sb}</option>`;
+            });
+
+            const students = appData.students.filter(s => s.classId === selectedClassId);
+            if (students.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 py-6 text-xs">Tiada senarai nama pelajar bagi kelas ini.</p>`;
+                return;
+            }
+
+            const phaseId = appData.activePhaseId;
+            const records = appData.attendanceRecords[phaseId]?.[selectedDateKey]?.[selectedSlotId]?.[selectedClassId] || {};
+
+            container.innerHTML = '';
+            students.forEach((s, idx) => {
+                const rec = records[s.id] || { status: 'hadir', reason: '' };
+                const row = document.createElement('div');
+                row.className = "p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition-all rounded-lg";
+                row.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold text-slate-400 w-5">${idx + 1}.</span>
+                        <span class="text-sm font-medium text-slate-800">${s.name}</span>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button onclick="setStudentStatus('${s.id}', 'hadir')" class="px-3 py-1.5 rounded text-xs font-semibold ${rec.status === 'hadir' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">Hadir</button>
+                        <button onclick="setStudentStatus('${s.id}', 'tidak_hadir')" class="px-3 py-1.5 rounded text-xs font-semibold ${rec.status === 'tidak_hadir' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">Tidak Hadir</button>
+                        
+                        <select onchange="setStudentReason('${s.id}', this.value)" class="text-xs border border-slate-300 rounded p-1.5 ${rec.status === 'tidak_hadir' ? '' : 'hidden'}">
+                            <option value="Sakit / Cuti Sakit" ${rec.reason === 'Sakit / Cuti Sakit' ? 'selected' : ''}>Sakit / Cuti Sakit</option>
+                            <option value="Kenyataan Ibu Bapa" ${rec.reason === 'Kenyataan Ibu Bapa' ? 'selected' : ''}>Kenyataan Ibu Bapa</option>
+                            <option value="Aktiviti Sekolah / Sukan" ${rec.reason === 'Aktiviti Sekolah / Sukan' ? 'selected' : ''}>Aktiviti Sekolah / Sukan</option>
+                            <option value="Tanpa Sebab / Ponteng" ${rec.reason === 'Tanpa Sebab / Ponteng' ? 'selected' : ''}>Tanpa Sebab / Ponteng</option>
+                        </select>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            document.getElementById('attendanceSummaryBadge').innerText = `${students.length} Pelajar Rekod`;
+            document.getElementById('btnSaveAttendance').disabled = false;
+        }
+
+        function updateSelectedSubjectForSession(subjVal) {
+            const selectedDateKey = document.getElementById('attendanceInputDate').value;
+            const sessionKey = `${appData.activePhaseId}_${selectedDateKey}_${selectedSlotId}_${selectedClassId}`;
+            appData.selectedSessionSubjects[sessionKey] = subjVal;
+            saveData();
+        }
+
+        function setStudentStatus(studentId, status) {
+            const selectedDateKey = document.getElementById('attendanceInputDate').value;
+            const phaseId = appData.activePhaseId;
+
+            if (!appData.attendanceRecords[phaseId]) appData.attendanceRecords[phaseId] = {};
+            if (!appData.attendanceRecords[phaseId][selectedDateKey]) appData.attendanceRecords[phaseId][selectedDateKey] = {};
+            if (!appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId]) appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId] = {};
+            if (!appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId][selectedClassId]) appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId][selectedClassId] = {};
+            
+            const currentRec = appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId][selectedClassId][studentId] || {};
+            appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId][selectedClassId][studentId] = {
+                status: status,
+                reason: status === 'tidak_hadir' ? (currentRec.reason || 'Sakit / Cuti Sakit') : ''
+            };
+            renderStudentList();
+        }
+
+        function setStudentReason(studentId, reason) {
+            const selectedDateKey = document.getElementById('attendanceInputDate').value;
+            const phaseId = appData.activePhaseId;
+            if (appData.attendanceRecords[phaseId]?.[selectedDateKey]?.[selectedSlotId]?.[selectedClassId]?.[studentId]) {
+                appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId][selectedClassId][studentId].reason = reason;
+            }
+        }
+
+        function confirmAndSaveAttendance() {
+            saveData();
+            
+            const selectedDateKey = document.getElementById('attendanceInputDate').value;
+            const phaseId = appData.activePhaseId;
+            const records = appData.attendanceRecords[phaseId]?.[selectedDateKey]?.[selectedSlotId]?.[selectedClassId] || {};
+            const students = appData.students.filter(s => s.classId === selectedClassId);
+            
+            let hadir = 0, tidakHadir = 0;
+            students.forEach(s => {
+                if ((records[s.id]?.status || 'hadir') === 'hadir') hadir++;
+                else tidakHadir++;
+            });
+
+            const cls = appData.classes.find(c => c.id === selectedClassId);
+            const slot = appData.slots.find(s => s.id === selectedSlotId);
+            const phaseObj = appData.phases.find(p => p.id === phaseId);
+            const sessionKey = `${phaseId}_${selectedDateKey}_${selectedSlotId}_${selectedClassId}`;
+            const currentSubj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+
+            document.getElementById('popPhase').innerText = phaseObj?.name || "-";
+            document.getElementById('popDate').innerText = selectedDateKey;
+            document.getElementById('popSlot').innerText = `${slot.name} (${slot.time})`;
+            document.getElementById('popClass').innerText = cls.name;
+            document.getElementById('popSubject').innerText = currentSubj;
+            document.getElementById('popHadir').innerText = `${hadir} Pelajar`;
+            document.getElementById('popTidakHadir').innerText = `${tidakHadir} Pelajar`;
+
+            document.getElementById('confirmationModal').classList.remove('hidden');
+        }
+
+        function closeConfirmationModal() {
+            document.getElementById('confirmationModal').classList.add('hidden');
+        }
+
+        function toggleReportTypeUI() {
+            const reportType = document.getElementById('reportTypeFilter').value;
+            if(reportType === 'daily') {
+                document.getElementById('dailyFilterContainer').classList.remove('hidden');
+                document.getElementById('monthlyFilterContainer').classList.add('hidden');
+            } else {
+                document.getElementById('dailyFilterContainer').classList.add('hidden');
+                document.getElementById('monthlyFilterContainer').classList.remove('hidden');
+            }
+        }
+
+        function populateAnalysisFilter() {
+            const selSubj = document.getElementById('analysisSubjectFilter');
+            selSubj.innerHTML = '';
+            appData.allSubjects.forEach(s => {
+                selSubj.innerHTML += `<option value="${s}">${s}</option>`;
+            });
+            populateAdminDropdowns();
+        }
+
+        function renderAnalytics() {
+            const reportType = document.getElementById('reportTypeFilter').value;
+            const selectedSubject = document.getElementById('analysisSubjectFilter').value;
+            const selectedClassId = document.getElementById('analysisClassFilter').value;
+            const phaseId = appData.activePhaseId;
+
+            let totalHadirCount = 0;
+            let totalTidakHadirCount = 0;
+            let totalPossibleEntries = 0;
+            let reasons = {};
+            let classStats = {};
+
+            appData.classes.forEach(c => {
+                classStats[c.id] = { hadir: 0, total: 0, name: c.name };
+            });
+
+            const phaseRecords = appData.attendanceRecords[phaseId] || {};
+
+            if (reportType === 'daily') {
+                const dateKey = document.getElementById('analysisDateFilter').value;
+                const records = phaseRecords[dateKey] || {};
+
+                // Jika Kelas Spesifik Dipilih Bagi Laporan Harian Back-Dated
+                if (selectedClassId !== "semua_kelas") {
+                    document.getElementById('standardAnalyticsView').classList.add('hidden');
+                    document.getElementById('detailedClassAnalyticsView').classList.remove('hidden');
+                    document.getElementById('visualChartContainer').classList.add('hidden');
+
+                    const clsObj = appData.classes.find(c => c.id === selectedClassId);
+                    const classStudents = appData.students.filter(s => s.classId === selectedClassId);
+
+                    document.getElementById('detailedTableTitle').innerText = `Laporan Kehadiran Harian Pelajar (${dateKey})`;
+                    document.getElementById('detailedClassTitle').innerText = `Kelas: ${clsObj?.name || '-'}`;
+                    document.getElementById('thReasonHeader').innerText = "Catatan / Alasan Tidak Hadir";
+
+                    const tbody = document.getElementById('studentDetailedTableBody');
+                    tbody.innerHTML = '';
+
+                    classStudents.forEach((st, idx) => {
+                        let statusText = "Hadir";
+                        let reasonText = "-";
+                        let isHadir = true;
+
+                        appData.slots.forEach(slot => {
+                            const rec = records[slot.id]?.[selectedClassId]?.[st.id];
+                            if (rec && rec.status === 'tidak_hadir') {
+                                isHadir = false;
+                                reasonText = rec.reason || "Tanpa Sebab";
+                            }
+                        });
+
+                        if (isHadir) {
+                            totalHadirCount++;
+                            statusText = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">Hadir</span>`;
+                        } else {
+                            totalTidakHadirCount++;
+                            statusText = `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">Tidak Hadir</span>`;
+                        }
+
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-slate-50">
+                                <td class="p-2 font-bold text-slate-400">${idx + 1}</td>
+                                <td class="p-2 font-semibold text-slate-800">${st.name}</td>
+                                <td class="p-2 text-center">${statusText}</td>
+                                <td class="p-2 text-slate-600 font-medium">${reasonText}</td>
+                            </tr>
+                        `;
+                    });
+
+                    document.getElementById('statTotal').innerText = classStudents.length;
+                    document.getElementById('statHadir').innerText = totalHadirCount;
+                    document.getElementById('statTidakHadir').innerText = totalTidakHadirCount;
+                    document.getElementById('statPeratus').innerText = classStudents.length > 0 ? Math.round((totalHadirCount / classStudents.length) * 100) + '%' : '0%';
+                    return;
+                }
+
+                // Paparan Standard Keseluruhan Harian
+                document.getElementById('standardAnalyticsView').classList.remove('hidden');
+                document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
+                document.getElementById('visualChartContainer').classList.remove('hidden');
+
+                document.getElementById('lblStatHadir').innerText = "Hadir (Hari Ini)";
+                document.getElementById('lblStatTidakHadir').innerText = "Tidak Hadir";
+                document.getElementById('classAnalysisHeader').innerText = "Peratus Kehadiran Mengikut Kelas (Harian)";
+
+                appData.slots.forEach(slot => {
+                    appData.students.forEach(s => {
+                        const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${s.classId}`;
+                        const subj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+
+                        if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
+                            const status = records[slot.id]?.[s.classId]?.[s.id]?.status || 'hadir';
+                            const reason = records[slot.id]?.[s.classId]?.[s.id]?.reason || '';
+
+                            totalPossibleEntries++;
+                            classStats[s.classId].total++;
+
+                            if (status === 'hadir') {
+                                totalHadirCount++;
+                                classStats[s.classId].hadir++;
+                            } else {
+                                totalTidakHadirCount++;
+                                if (reason) reasons[reason] = (reasons[reason] || 0) + 1;
+                            }
+                        }
+                    });
+                });
+
+                document.getElementById('statTotal').innerText = appData.students.length;
+
+            } else if (reportType === 'monthly') {
+                document.getElementById('standardAnalyticsView').classList.remove('hidden');
+                document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
+                document.getElementById('visualChartContainer').classList.remove('hidden');
+
+                document.getElementById('lblStatHadir').innerText = "Jumlah Kehadiran";
+                document.getElementById('lblStatTidakHadir').innerText = "Jumlah Ketidakhadiran";
+                document.getElementById('classAnalysisHeader').innerText = "Peratus Kehadiran Kumulatif (Bulanan)";
+
+                const selectedMonth = document.getElementById('analysisMonthFilter').value;
+                const matchingDates = Object.keys(phaseRecords).filter(d => d.startsWith(selectedMonth));
+
+                matchingDates.forEach(dateKey => {
+                    appData.slots.forEach(slot => {
+                        appData.students.forEach(s => {
+                            if (selectedClassId === "semua_kelas" || s.classId === selectedClassId) {
+                                const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${s.classId}`;
+                                const subj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+
+                                if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
+                                    const status = phaseRecords[dateKey]?.[slot.id]?.[s.classId]?.[s.id]?.status || 'hadir';
+                                    const reason = phaseRecords[dateKey]?.[slot.id]?.[s.classId]?.[s.id]?.reason || '';
+
+                                    totalPossibleEntries++;
+                                    classStats[s.classId].total++;
+
+                                    if (status === 'hadir') {
+                                        totalHadirCount++;
+                                        classStats[s.classId].hadir++;
+                                    } else {
+                                        totalTidakHadirCount++;
+                                        if (reason) reasons[reason] = (reasons[reason] || 0) + 1;
+                                    }
+                                }
+                            }
+                        });
+                    });
+                });
+
+                document.getElementById('statTotal').innerText = appData.students.length;
+
+            } else { // Class Detail Bulanan
+                document.getElementById('standardAnalyticsView').classList.add('hidden');
+                document.getElementById('detailedClassAnalyticsView').classList.remove('hidden');
+                document.getElementById('visualChartContainer').classList.add('hidden');
+
+                const selectedMonth = document.getElementById('analysisMonthFilter').value;
+                const classId = selectedClassId === "semua_kelas" ? appData.classes[0]?.id : selectedClassId;
+                const clsObj = appData.classes.find(c => c.id === classId);
+                const classStudents = appData.students.filter(s => s.classId === classId);
+
+                document.getElementById('detailedTableTitle').innerText = "Rekod Kehadiran Individu Pelajar (Bulanan)";
+                document.getElementById('detailedClassTitle').innerText = `Kelas: ${clsObj?.name || '-'}`;
+                document.getElementById('thReasonHeader').innerText = "Sesi Hadir / Tidak Hadir (% Peratus)";
+
+                const matchingDates = Object.keys(phaseRecords).filter(d => d.startsWith(selectedMonth));
+                const tbody = document.getElementById('studentDetailedTableBody');
+                tbody.innerHTML = '';
+
+                let totalClassHadir = 0;
+                let totalClassTakHadir = 0;
+
+                classStudents.forEach((st, idx) => {
+                    let studentHadir = 0;
+                    let studentTakHadir = 0;
+                    let countSessions = 0;
+
+                    matchingDates.forEach(dateKey => {
+                        appData.slots.forEach(slot => {
+                            const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${classId}`;
+                            const subj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+
+                            if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
+                                countSessions++;
+                                const rec = phaseRecords[dateKey]?.[slot.id]?.[classId]?.[st.id];
+                                if (rec && rec.status === 'tidak_hadir') studentTakHadir++;
+                                else studentHadir++;
+                            }
+                        });
+                    });
+
+                    totalClassHadir += studentHadir;
+                    totalClassTakHadir += studentTakHadir;
+                    const pct = countSessions > 0 ? Math.round((studentHadir / countSessions) * 100) : 0;
+
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-2 font-bold text-slate-400">${idx + 1}</td>
+                            <td class="p-2 font-semibold text-slate-800">${st.name}</td>
+                            <td class="p-2 text-center"><span class="font-bold text-emerald-600">${studentHadir} Hadir</span> / <span class="font-bold text-rose-600">${studentTakHadir} Ponteng</span></td>
+                            <td class="p-2 font-extrabold ${pct < 80 ? 'text-rose-600' : 'text-indigo-600'}">${pct}% Kehadiran</td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('statTotal').innerText = classStudents.length;
+                document.getElementById('statHadir').innerText = totalClassHadir;
+                document.getElementById('statTidakHadir').innerText = totalClassTakHadir;
+                document.getElementById('statPeratus').innerText = (totalClassHadir + totalClassTakHadir) > 0 ? Math.round((totalClassHadir / (totalClassHadir + totalClassTakHadir)) * 100) + '%' : '0%';
+                return;
+            }
+
+            document.getElementById('statHadir').innerText = totalHadirCount;
+            document.getElementById('statTidakHadir').innerText = totalTidakHadirCount;
+            document.getElementById('statPeratus').innerText = totalPossibleEntries > 0 ? Math.round((totalHadirCount / totalPossibleEntries) * 100) + '%' : '0%';
+
+            // BINA CARTA VISUAL TAILWIND (BAR CHART)
+            const visualChart = document.getElementById('visualBarChart');
+            visualChart.innerHTML = '';
+
+            const classContainer = document.getElementById('classBreakdownList');
+            classContainer.innerHTML = '';
+
+            appData.classes.forEach(c => {
+                const st = classStats[c.id];
+                const pct = st.total > 0 ? Math.round((st.hadir / st.total) * 100) : 0;
+                
+                let barColor = "bg-emerald-500";
+                if (pct < 60) barColor = "bg-rose-500";
+                else if (pct < 80) barColor = "bg-amber-500";
+
+                // Visual Chart Component
+                visualChart.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-[11px] font-bold mb-1">
+                            <span class="text-slate-700">${c.name}</span>
+                            <span class="${pct < 80 ? 'text-rose-600' : 'text-emerald-600'} font-extrabold">${pct}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
+                            <div class="${barColor} h-full rounded-full transition-all duration-500 flex items-center justify-end pr-1 text-[9px] text-white font-bold" style="width: ${Math.max(pct, 5)}%">
+                                ${pct > 15 ? pct + '%' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                classContainer.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-[11px] font-semibold mb-0.5">
+                            <span>${c.name}</span>
+                            <span>${pct}% (${st.hadir}/${st.total})</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5">
+                            <div class="bg-indigo-600 h-1.5 rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const reasonContainer = document.getElementById('reasonBreakdownList');
+            reasonContainer.innerHTML = '';
+            if (Object.keys(reasons).length === 0) {
+                reasonContainer.innerHTML = `<p class="text-slate-400 italic">Tiada rekod tidak hadir.</p>`;
+            } else {
+                for (const [r, count] of Object.entries(reasons)) {
+                    reasonContainer.innerHTML += `
+                        <div class="flex justify-between border-b pb-0.5 text-[11px]">
+                            <span class="text-slate-600">${r}</span>
+                            <span class="font-bold text-rose-600">${count} Sesi</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function triggerPrint() {
+            document.getElementById('printSchoolName').innerText = appData.schoolName;
+            document.getElementById('printAppTitle').innerText = appData.appTitle;
+            document.getElementById('printLogo').src = appData.schoolLogo;
+            
+            const phaseObj = appData.phases.find(p => p.id === appData.activePhaseId);
+            document.getElementById('printPhaseTitle').innerText = phaseObj?.name || "";
+
+            const reportType = document.getElementById('reportTypeFilter').value;
+            const subj = document.getElementById('analysisSubjectFilter').value;
+            const classId = document.getElementById('analysisClassFilter').value;
+            const clsObj = appData.classes.find(c => c.id === classId);
+
+            if(reportType === 'daily') {
+                const dateVal = document.getElementById('analysisDateFilter').value;
+                document.getElementById('printReportHeadline').innerText = `LAPORAN KEHADIRAN HARIAN ${classId !== "semua_kelas" ? "(" + clsObj?.name + ")" : ""}`;
+                document.getElementById('printReportSubline').innerText = `Tarikh: ${dateVal} • Matapelajaran: ${subj}`;
+            } else if(reportType === 'monthly') {
+                const monthVal = document.getElementById('analysisMonthFilter').value;
+                document.getElementById('printReportHeadline').innerText = "LAPORAN BULANAN ANALISIS KEHADIRAN";
+                document.getElementById('printReportSubline').innerText = `Bulan: ${monthVal} • Matapelajaran: ${subj}`;
+            } else {
+                const monthVal = document.getElementById('analysisMonthFilter').value;
+                document.getElementById('printReportHeadline').innerText = `LAPORAN KEHADIRAN TERPERINCI PELAJAR (${clsObj?.name || ''})`;
+                document.getElementById('printReportSubline').innerText = `Bulan: ${monthVal} • Matapelajaran: ${subj}`;
+            }
+
+            const printContent = document.getElementById('printableReportArea').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Cetak Laporan Kehadiran</title>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                    <style>body { font-family: sans-serif; padding: 20px; color: #1e293b; }</style>
+                </head>
+                <body>
+                    <div class="max-w-2xl mx-auto border border-slate-200 p-6 rounded-xl shadow-sm">
+                        ${printContent}
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => printWindow.print(), 500);
+        }
+
+        // Admin Functions
+        function verifyAdminPin() {
+            const pin = document.getElementById('inputAdminPin').value;
+            if (pin === appData.adminPin) {
+                document.getElementById('adminLockScreen').classList.add('hidden');
+                document.getElementById('adminPanelContent').classList.remove('hidden');
+                document.getElementById('cfgSchoolName').value = appData.schoolName || '';
+                document.getElementById('cfgAppTitle').value = appData.appTitle || '';
+                document.getElementById('cfgSchoolLogo').value = appData.schoolLogo || '';
+                renderAdminPhaseList();
+                renderAdminSubjectList();
+                populateAdminDropdowns();
+                renderAdminClassList();
+                renderAdminStudentManagementList();
+            } else {
+                document.getElementById('pinErrorMsg').classList.remove('hidden');
+            }
+        }
+
+        function lockAdmin() {
+            document.getElementById('inputAdminPin').value = '';
+            document.getElementById('adminLockScreen').classList.remove('hidden');
+            document.getElementById('adminPanelContent').classList.add('hidden');
+        }
+
+        function renderAdminPhaseList() {
+            const container = document.getElementById('adminPhaseList');
+            container.innerHTML = '';
+            appData.phases.forEach(p => {
+                const isActive = p.id === appData.activePhaseId;
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded border border-slate-200">
+                        <span><strong>${p.name}</strong> ${isActive ? '<span class="text-indigo-600 font-bold ml-1">(Aktif Masa Kini)</span>' : ''}</span>
+                        <div class="flex gap-2">
+                            ${!isActive ? `<button onclick="setPhaseActive('${p.id}')" class="text-indigo-600 font-bold hover:underline">Set Aktif</button>` : ''}
+                            <button onclick="removePhase('${p.id}')" class="text-rose-600 hover:underline">Padam</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addNewPhase() {
+            const name = document.getElementById('newPhaseName').value;
+            if (name) {
+                const newId = 'p_' + Date.now();
+                appData.phases.push({ id: newId, name });
+                saveData();
+                document.getElementById('newPhaseName').value = '';
+                renderAdminPhaseList();
+                renderGlobalPhaseDropdown();
+                alert("Fasa Baharu Berjaya Ditambah!");
+            }
+        }
+
+        function setPhaseActive(id) {
+            appData.activePhaseId = id;
+            saveData();
+            renderAdminPhaseList();
+            renderGlobalPhaseDropdown();
+            renderStudentList();
+            alert("Fasa Aktif Berjaya Ditukar!");
+        }
+
+        function removePhase(id) {
+            if (appData.phases.length <= 1) {
+                alert("Mesti ada sekurang-kurangnya 1 fasa.");
+                return;
+            }
+            appData.phases = appData.phases.filter(p => p.id !== id);
+            if (appData.activePhaseId === id) {
+                appData.activePhaseId = appData.phases[0].id;
+            }
+            saveData();
+            renderAdminPhaseList();
+            renderGlobalPhaseDropdown();
+        }
+
+        function populateAdminDropdowns() {
+            const selBulk = document.getElementById('bulkImportClassSelect');
+            const selFilter = document.getElementById('adminFilterStudentClass');
+            const selClassFilter = document.getElementById('analysisClassFilter');
+
+            selBulk.innerHTML = '';
+            selFilter.innerHTML = '';
+            selClassFilter.innerHTML = '<option value="semua_kelas">Semua Kelas</option>';
+
+            appData.classes.forEach(c => {
+                selBulk.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                selFilter.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                selClassFilter.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+        }
+
+        function executeBulkImport() {
+            const classId = document.getElementById('bulkImportClassSelect').value;
+            const text = document.getElementById('bulkImportTextarea').value;
+            if (!classId || !text.trim()) {
+                alert("Sila pilih kelas dan masukkan senarai nama.");
+                return;
+            }
+
+            const names = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+            names.forEach(name => {
+                appData.students.push({ id: 's' + Date.now() + Math.random().toString(36).substr(2, 4), classId, name });
+            });
+
+            saveData();
+            document.getElementById('bulkImportTextarea').value = '';
+            renderAdminStudentManagementList();
+            renderStudentList();
+            alert(`Berjaya menambah ${names.length} nama pelajar!`);
+        }
+
+        function renderAdminStudentManagementList() {
+            const classId = document.getElementById('adminFilterStudentClass').value;
+            const container = document.getElementById('adminStudentManagementList');
+            container.innerHTML = '';
+
+            const list = appData.students.filter(s => s.classId === classId);
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic">Tiada pelajar dalam kelas ini.</p>`;
+                return;
+            }
+
+            list.forEach((st, idx) => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded border border-slate-200">
+                        <span><strong>${idx + 1}.</strong> ${st.name}</span>
+                        <div class="flex gap-2">
+                            <button onclick="editStudentName('${st.id}')" class="text-indigo-600 hover:underline">Edit</button>
+                            <button onclick="deleteStudent('${st.id}')" class="text-rose-600 hover:underline">Padam</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function editStudentName(studentId) {
+            const st = appData.students.find(s => s.id === studentId);
+            if (st) {
+                const newName = prompt("Kemaskini nama pelajar:", st.name);
+                if (newName && newName.trim()) {
+                    st.name = newName.trim();
+                    saveData();
+                    renderAdminStudentManagementList();
+                    renderStudentList();
+                }
+            }
+        }
+
+        function deleteStudent(studentId) {
+            if (confirm("Adakah anda pasti nak padam pelajar ini?")) {
+                appData.students = appData.students.filter(s => s.id !== studentId);
+                saveData();
+                renderAdminStudentManagementList();
+                renderStudentList();
+            }
+        }
+
+        function renderAdminSubjectList() {
+            const container = document.getElementById('adminSubjectList');
+            container.innerHTML = '';
+            appData.allSubjects.forEach((sb, idx) => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded border border-slate-200">
+                        <span><strong>${sb}</strong></span>
+                        ${idx > 0 ? `<button onclick="removeSubject(${idx})" class="text-rose-600 hover:underline">Padam</button>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function addNewSubject() {
+            const name = document.getElementById('newSubjectName').value;
+            if (name) {
+                appData.allSubjects.push(name);
+                saveData();
+                document.getElementById('newSubjectName').value = '';
+                renderAdminSubjectList();
+                populateAnalysisFilter();
+                alert("Subjek Berjaya Ditambah!");
+            }
+        }
+
+        function removeSubject(idx) {
+            appData.allSubjects.splice(idx, 1);
+            saveData();
+            renderAdminSubjectList();
+            populateAnalysisFilter();
+        }
+
+        function saveIdentitySettings() {
+            appData.schoolName = document.getElementById('cfgSchoolName').value;
+            appData.appTitle = document.getElementById('cfgAppTitle').value;
+            appData.schoolLogo = document.getElementById('cfgSchoolLogo').value;
+            saveData();
+            renderIdentity();
+            alert("Profil Disimpan!");
+        }
+
+        function addClass() {
+            const name = document.getElementById('newClassName').value;
+            if (name) {
+                appData.classes.push({ id: 'c' + Date.now(), name });
+                saveData();
+                document.getElementById('newClassName').value = '';
+                renderClassButtons();
+                populateAdminDropdowns();
+                renderAdminClassList();
+                alert("Kelas Berjaya Ditambah!");
+            }
+        }
+
+        function renderAdminClassList() {
+            const container = document.getElementById('adminClassList');
+            container.innerHTML = '';
+            appData.classes.forEach(c => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded border border-slate-200">
+                        <span><strong>${c.name}</strong></span>
+                        <button onclick="removeClass('${c.id}')" class="text-rose-600 hover:underline">Padam</button>
+                    </div>
+                `;
+            });
+        }
+
+        function removeClass(id) {
+            appData.classes = appData.classes.filter(c => c.id !== id);
+            saveData();
+            renderClassButtons();
+            populateAdminDropdowns();
+            renderAdminClassList();
+        }
+
+        function changeAdminPin() {
+            const newPin = document.getElementById('newPinInput').value;
+            if (newPin.length >= 4) {
+                appData.adminPin = newPin;
+                saveData();
+                alert("PIN Admin Berjaya Diperkemaskan!");
+                document.getElementById('newPinInput').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
