@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Kehadiran Kelas Tambahan T5 Online v12</title>
+    <title>Sistem Kehadiran Kelas Tambahan T5 Online v15</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -130,9 +130,9 @@
                         <div>
                             <label class="block font-medium text-slate-600 mb-1">Jenis Laporan:</label>
                             <select id="reportTypeFilter" onchange="toggleReportTypeUI()" class="w-full border border-slate-300 rounded-lg p-2 font-semibold">
-                                <option value="daily">Laporan Harian (Back-Dated)</option>
+                                <option value="daily">Laporan Harian Keseluruhan</option>
                                 <option value="monthly">Laporan Bulanan Keseluruhan</option>
-                                <option value="class_detail">Laporan Bulanan Terperinci Pelajar (Mengikut Kelas)</option>
+                                <option value="class_detail">Laporan Terperinci Pelajar</option>
                             </select>
                         </div>
 
@@ -172,7 +172,7 @@
                         <h1 id="printSchoolName" class="text-base font-bold uppercase tracking-wide"></h1>
                         <p id="printAppTitle" class="text-xs font-medium text-slate-600"></p>
                         <p class="text-xs font-bold text-indigo-700 mt-1 uppercase" id="printPhaseTitle"></p>
-                        <p class="text-xs font-bold text-slate-800 mt-0.5 uppercase" id="printReportHeadline">LAPORAN ANALISIS KEHADIRAN</p>
+                        <p class="text-xs font-bold text-slate-800 mt-0.5 uppercase" id="printReportHeadline">RINGKASAN KEHADIRAN HARIAN KESELURUHAN KELAS</p>
                         <p class="text-[11px] text-slate-500" id="printReportSubline"></p>
                     </div>
 
@@ -196,29 +196,38 @@
                         </div>
                     </div>
 
-                    <!-- BUKAN CARTA ANALISIS VISUAL -->
+                    <!-- CARTA BAR VISUAL -->
                     <div id="visualChartContainer" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-3 space-y-2">
                         <h3 class="font-bold text-xs text-indigo-900 border-b pb-1 flex items-center justify-between">
-                            <span><i class="fa-solid fa-chart-column text-indigo-600"></i> Carta Visual Analisis Kehadiran Mengikut Kelas</span>
+                            <span><i class="fa-solid fa-chart-column text-indigo-600"></i> Perbandingan Visual Kehadiran Mengikut Kelas</span>
                             <span class="text-[10px] text-slate-400 font-normal">Penanda Aras: 80%+ Cemerlang</span>
                         </h3>
                         <div id="visualBarChart" class="space-y-2 pt-1"></div>
                     </div>
 
-                    <!-- PAPARAN STANDARD ANALISIS -->
-                    <div id="standardAnalyticsView" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
-                            <h3 class="font-bold text-xs text-slate-700 border-b pb-1" id="classAnalysisHeader">Peratus Kehadiran Mengikut Kelas</h3>
-                            <div id="classBreakdownList" class="space-y-2"></div>
-                        </div>
-
-                        <div class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
-                            <h3 class="font-bold text-xs text-slate-700 border-b pb-1" id="reasonAnalysisHeader">Pecahan Alasan Pelajar Tidak Hadir</h3>
-                            <div id="reasonBreakdownList" class="space-y-1.5 text-xs"></div>
+                    <!-- JADUAL RINGKASAN KESELURUHAN KELAS HARIAN -->
+                    <div id="dailySummaryTableView" class="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2 mb-3">
+                        <h3 class="font-bold text-xs text-slate-800 border-b pb-2 flex justify-between items-center">
+                            <span><i class="fa-solid fa-table-list text-indigo-600"></i> Ringkasan Kehadiran Kelas (Harian)</span>
+                            <span id="dailyDateTitle" class="text-indigo-600 font-bold"></span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 border-b">
+                                        <th class="p-2 w-24">Nama Kelas</th>
+                                        <th class="p-2 text-center w-28">Jumlah Hadir</th>
+                                        <th class="p-2 text-center w-20">Peratus</th>
+                                        <th class="p-2">Nama Pelajar Tidak Hadir & Sebab</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dailySummaryTableBody" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
-                    <!-- PAPARAN TERPERINCI SENARAI PELAJAR -->
+                    <!-- PAPARAN TERPERINCI INDIVIDU -->
                     <div id="detailedClassAnalyticsView" class="hidden bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
                         <h3 class="font-bold text-xs text-slate-700 border-b pb-2 flex justify-between items-center">
                             <span id="detailedTableTitle">Rekod Kehadiran Individu Pelajar</span>
@@ -230,7 +239,7 @@
                                     <tr class="bg-slate-100 text-slate-700 border-b">
                                         <th class="p-2 w-8">No</th>
                                         <th class="p-2">Nama Pelajar</th>
-                                        <th class="p-2 text-center w-24">Status</th>
+                                        <th class="p-2 text-center w-28">Status</th>
                                         <th class="p-2 w-48" id="thReasonHeader">Sebab Tidak Hadir / Catatan</th>
                                     </tr>
                                 </thead>
@@ -289,17 +298,54 @@
                         </button>
                     </div>
 
+                    <!-- PEMANTAUAN STATUS PENGISIAN HARIAN -->
+                    <div class="bg-white p-4 rounded-xl border border-indigo-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center justify-between">
+                            <span><i class="fa-solid fa-clipboard-check text-indigo-600"></i> Pemantauan Status Pengisian Kehadiran Harian</span>
+                            <span class="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">Live Status Tracker</span>
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <label class="block font-medium text-slate-600 mb-1">Tarikh Semakan Tracker:</label>
+                                <input type="date" id="adminTrackerDate" onchange="renderAdminTracker()" class="w-full border border-slate-300 rounded p-1.5 font-bold">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-600 mb-1">Slot Waktu:</label>
+                                <select id="adminTrackerSlot" onchange="renderAdminTracker()" class="w-full border border-slate-300 rounded p-1.5 font-bold">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="adminTrackerList" class="space-y-2 pt-2"></div>
+                    </div>
+
+                    <!-- MODUL ADMIN: PENGURUSAN SLOT & WAKTU (RESTORED IN V15) -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-clock text-indigo-600"></i> Pengurusan Slot Waktu Kelas Tambahan
+                        </h3>
+                        <div id="adminSlotList" class="space-y-2"></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <input type="text" id="newSlotName" placeholder="Nama Slot (Cth: Slot 4)" class="text-xs border border-slate-300 rounded p-2">
+                            <input type="text" id="newSlotTime" placeholder="Masa (Cth: 4:30 PM - 5:30 PM)" class="text-xs border border-slate-300 rounded p-2">
+                            <button onclick="addNewSlot()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Slot</button>
+                        </div>
+                    </div>
+
+                    <!-- PENGURUSAN FASA -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                         <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
                             <i class="fa-solid fa-list-check text-indigo-600"></i> Pengurusan Fasa Program SPM
                         </h3>
                         <div id="adminPhaseList" class="space-y-2"></div>
                         <div class="flex gap-2">
-                            <input type="text" id="newPhaseName" placeholder="Nama Fasa Baharu (Cth: Fasa 3: Pecutan Akhir)" class="text-xs border border-slate-300 rounded p-2 flex-1">
+                            <input type="text" id="newPhaseName" placeholder="Nama Fasa Baharu" class="text-xs border border-slate-300 rounded p-2 flex-1">
                             <button onclick="addNewPhase()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Fasa</button>
                         </div>
                     </div>
 
+                    <!-- BULK IMPORT PELAJAR -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                         <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
                             <i class="fa-solid fa-users-line text-indigo-600"></i> Tambah Nama Pelajar Secara Pukal (Bulk Import)
@@ -312,6 +358,7 @@
                         <button onclick="executeBulkImport()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded font-bold transition-all">+ Tambah Semua Nama Ke Kelas</button>
                     </div>
 
+                    <!-- EDIT/PADAM PELAJAR -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                         <div class="flex justify-between items-center border-b pb-2">
                             <h3 class="font-bold text-sm text-slate-700">Pengurusan Senarai Nama Pelajar (Edit / Padam)</h3>
@@ -320,6 +367,7 @@
                         <div id="adminStudentManagementList" class="space-y-1.5 max-h-60 overflow-y-auto p-1"></div>
                     </div>
 
+                    <!-- MATAPELAJARAN -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                         <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
                             <i class="fa-solid fa-book text-indigo-600"></i> Pengurusan Senarai Matapelajaran SPM
@@ -331,6 +379,7 @@
                         </div>
                     </div>
 
+                    <!-- IDENTITI SEKOLAH -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                         <h3 class="font-bold text-sm text-slate-700 border-b pb-2">Identiti Sekolah</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -350,6 +399,7 @@
                         <button onclick="saveIdentitySettings()" class="bg-indigo-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-indigo-700">Simpan Profil Sekolah</button>
                     </div>
 
+                    <!-- PENGURUSAN KELAS -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                         <h3 class="font-bold text-sm text-slate-700 border-b pb-2">Pengurusan Kelas</h3>
                         <div class="flex gap-2">
@@ -359,6 +409,7 @@
                         <div id="adminClassList" class="space-y-2 mt-2"></div>
                     </div>
 
+                    <!-- TUKAR PIN -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                         <h3 class="font-bold text-sm text-slate-700 border-b pb-2">Tukar PIN Admin</h3>
                         <div class="flex gap-2 max-w-xs">
@@ -371,6 +422,7 @@
         </main>
     </div>
 
+    <!-- MODAL POPUP SAH -->
     <div id="confirmationModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-4">
             <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl">
@@ -397,7 +449,6 @@
         </div>
     </div>
 
-    <!-- JS Logic Online Sync -->
     <script>
         // PASTE WEB APP URL GOOGLE APPS SCRIPT ANDA DI SINI
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEOWWAYq8HJWV7nIP_Ql6QXBmkoVLB-NBNBHdDVnbnK3k97hCr8rn8Po6dKun1hhlEIw/exec";
@@ -488,6 +539,7 @@
             document.getElementById('attendanceInputDate').value = todayStr;
             document.getElementById('analysisDateFilter').value = todayStr;
             document.getElementById('analysisMonthFilter').value = currentMonthStr;
+            document.getElementById('adminTrackerDate').value = todayStr;
 
             renderIdentity();
             renderGlobalPhaseDropdown();
@@ -550,6 +602,7 @@
                 document.getElementById('secAnalisis').classList.remove('hidden');
                 document.getElementById('tabAnalisis').classList.add('border-indigo-600', 'text-indigo-600');
                 populateAnalysisFilter();
+                renderAnalytics();
             } else if(tab === 'admin') {
                 document.getElementById('secAdmin').classList.remove('hidden');
                 document.getElementById('tabAdmin').classList.add('border-indigo-600', 'text-indigo-600');
@@ -738,122 +791,115 @@
             const selectedSubject = document.getElementById('analysisSubjectFilter').value;
             const selectedClassId = document.getElementById('analysisClassFilter').value;
             const phaseId = appData.activePhaseId;
+            const phaseRecords = appData.attendanceRecords[phaseId] || {};
 
             let totalHadirCount = 0;
             let totalTidakHadirCount = 0;
             let totalPossibleEntries = 0;
-            let reasons = {};
-            let classStats = {};
-
-            appData.classes.forEach(c => {
-                classStats[c.id] = { hadir: 0, total: 0, name: c.name };
-            });
-
-            const phaseRecords = appData.attendanceRecords[phaseId] || {};
 
             if (reportType === 'daily') {
                 const dateKey = document.getElementById('analysisDateFilter').value;
-                const records = phaseRecords[dateKey] || {};
+                document.getElementById('dailyDateTitle').innerText = `Tarikh: ${dateKey}`;
 
-                // Jika Kelas Spesifik Dipilih Bagi Laporan Harian Back-Dated
-                if (selectedClassId !== "semua_kelas") {
-                    document.getElementById('standardAnalyticsView').classList.add('hidden');
-                    document.getElementById('detailedClassAnalyticsView').classList.remove('hidden');
-                    document.getElementById('visualChartContainer').classList.add('hidden');
+                document.getElementById('dailySummaryTableView').classList.remove('hidden');
+                document.getElementById('visualChartContainer').classList.remove('hidden');
+                document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
 
-                    const clsObj = appData.classes.find(c => c.id === selectedClassId);
-                    const classStudents = appData.students.filter(s => s.classId === selectedClassId);
+                const summaryTbody = document.getElementById('dailySummaryTableBody');
+                summaryTbody.innerHTML = '';
 
-                    document.getElementById('detailedTableTitle').innerText = `Laporan Kehadiran Harian Pelajar (${dateKey})`;
-                    document.getElementById('detailedClassTitle').innerText = `Kelas: ${clsObj?.name || '-'}`;
-                    document.getElementById('thReasonHeader').innerText = "Catatan / Alasan Tidak Hadir";
+                const visualChart = document.getElementById('visualBarChart');
+                visualChart.innerHTML = '';
 
-                    const tbody = document.getElementById('studentDetailedTableBody');
-                    tbody.innerHTML = '';
+                let grandTotalStudents = 0;
 
-                    classStudents.forEach((st, idx) => {
-                        let statusText = "Hadir";
-                        let reasonText = "-";
-                        let isHadir = true;
+                const classesToIterate = selectedClassId === "semua_kelas" 
+                    ? appData.classes 
+                    : appData.classes.filter(c => c.id === selectedClassId);
+
+                classesToIterate.forEach(cls => {
+                    const classStudents = appData.students.filter(s => s.classId === cls.id);
+                    grandTotalStudents += classStudents.length;
+
+                    let classHadir = 0;
+                    let absentDetailsList = [];
+
+                    classStudents.forEach(st => {
+                        let isAbsent = false;
+                        let absentReason = "";
 
                         appData.slots.forEach(slot => {
-                            const rec = records[slot.id]?.[selectedClassId]?.[st.id];
-                            if (rec && rec.status === 'tidak_hadir') {
-                                isHadir = false;
-                                reasonText = rec.reason || "Tanpa Sebab";
+                            const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${cls.id}`;
+                            const subj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+
+                            if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
+                                const rec = phaseRecords[dateKey]?.[slot.id]?.[cls.id]?.[st.id];
+                                if (rec && rec.status === 'tidak_hadir') {
+                                    isAbsent = true;
+                                    absentReason = rec.reason || "Tanpa Sebab";
+                                }
                             }
                         });
 
-                        if (isHadir) {
-                            totalHadirCount++;
-                            statusText = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">Hadir</span>`;
-                        } else {
+                        if (isAbsent) {
                             totalTidakHadirCount++;
-                            statusText = `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">Tidak Hadir</span>`;
-                        }
-
-                        tbody.innerHTML += `
-                            <tr class="hover:bg-slate-50">
-                                <td class="p-2 font-bold text-slate-400">${idx + 1}</td>
-                                <td class="p-2 font-semibold text-slate-800">${st.name}</td>
-                                <td class="p-2 text-center">${statusText}</td>
-                                <td class="p-2 text-slate-600 font-medium">${reasonText}</td>
-                            </tr>
-                        `;
-                    });
-
-                    document.getElementById('statTotal').innerText = classStudents.length;
-                    document.getElementById('statHadir').innerText = totalHadirCount;
-                    document.getElementById('statTidakHadir').innerText = totalTidakHadirCount;
-                    document.getElementById('statPeratus').innerText = classStudents.length > 0 ? Math.round((totalHadirCount / classStudents.length) * 100) + '%' : '0%';
-                    return;
-                }
-
-                // Paparan Standard Keseluruhan Harian
-                document.getElementById('standardAnalyticsView').classList.remove('hidden');
-                document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
-                document.getElementById('visualChartContainer').classList.remove('hidden');
-
-                document.getElementById('lblStatHadir').innerText = "Hadir (Hari Ini)";
-                document.getElementById('lblStatTidakHadir').innerText = "Tidak Hadir";
-                document.getElementById('classAnalysisHeader').innerText = "Peratus Kehadiran Mengikut Kelas (Harian)";
-
-                appData.slots.forEach(slot => {
-                    appData.students.forEach(s => {
-                        const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${s.classId}`;
-                        const subj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
-
-                        if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
-                            const status = records[slot.id]?.[s.classId]?.[s.id]?.status || 'hadir';
-                            const reason = records[slot.id]?.[s.classId]?.[s.id]?.reason || '';
-
-                            totalPossibleEntries++;
-                            classStats[s.classId].total++;
-
-                            if (status === 'hadir') {
-                                totalHadirCount++;
-                                classStats[s.classId].hadir++;
-                            } else {
-                                totalTidakHadirCount++;
-                                if (reason) reasons[reason] = (reasons[reason] || 0) + 1;
-                            }
+                            absentDetailsList.push(`<span class="font-bold text-slate-800">${st.name}</span> <span class="text-rose-600 font-semibold">(${absentReason})</span>`);
+                        } else {
+                            classHadir++;
+                            totalHadirCount++;
                         }
                     });
+
+                    const totalInClass = classStudents.length;
+                    const pct = totalInClass > 0 ? Math.round((classHadir / totalInClass) * 100) : 0;
+
+                    let absentDisplay = absentDetailsList.length > 0 
+                        ? absentDetailsList.join(", ") 
+                        : `<span class="text-emerald-600 font-semibold"><i class="fa-solid fa-check"></i> Semua Hadir</span>`;
+
+                    summaryTbody.innerHTML += `
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-2 font-bold text-slate-800">${cls.name}</td>
+                            <td class="p-2 text-center font-bold text-indigo-700">${classHadir} / ${totalInClass}</td>
+                            <td class="p-2 text-center font-extrabold ${pct < 80 ? 'text-rose-600' : 'text-emerald-600'}">${pct}%</td>
+                            <td class="p-2 text-slate-600 text-[11px]">${absentDisplay}</td>
+                        </tr>
+                    `;
+
+                    let barColor = "bg-emerald-500";
+                    if (pct < 60) barColor = "bg-rose-500";
+                    else if (pct < 80) barColor = "bg-amber-500";
+
+                    visualChart.innerHTML += `
+                        <div>
+                            <div class="flex justify-between text-[11px] font-bold mb-1">
+                                <span class="text-slate-700">${cls.name}</span>
+                                <span class="${pct < 80 ? 'text-rose-600' : 'text-emerald-600'} font-extrabold">${pct}% (${classHadir}/${totalInClass})</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
+                                <div class="${barColor} h-full rounded-full transition-all duration-500 flex items-center justify-end pr-1 text-[9px] text-white font-bold" style="width: ${Math.max(pct, 5)}%">
+                                    ${pct > 15 ? pct + '%' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 });
 
-                document.getElementById('statTotal').innerText = appData.students.length;
+                document.getElementById('statTotal').innerText = grandTotalStudents;
+                document.getElementById('statHadir').innerText = totalHadirCount;
+                document.getElementById('statTidakHadir').innerText = totalTidakHadirCount;
+                document.getElementById('statPeratus').innerText = grandTotalStudents > 0 ? Math.round((totalHadirCount / grandTotalStudents) * 100) + '%' : '0%';
 
             } else if (reportType === 'monthly') {
-                document.getElementById('standardAnalyticsView').classList.remove('hidden');
-                document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
+                document.getElementById('dailySummaryTableView').classList.add('hidden');
                 document.getElementById('visualChartContainer').classList.remove('hidden');
-
-                document.getElementById('lblStatHadir').innerText = "Jumlah Kehadiran";
-                document.getElementById('lblStatTidakHadir').innerText = "Jumlah Ketidakhadiran";
-                document.getElementById('classAnalysisHeader').innerText = "Peratus Kehadiran Kumulatif (Bulanan)";
+                document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
 
                 const selectedMonth = document.getElementById('analysisMonthFilter').value;
                 const matchingDates = Object.keys(phaseRecords).filter(d => d.startsWith(selectedMonth));
+
+                let classStats = {};
+                appData.classes.forEach(c => { classStats[c.id] = { hadir: 0, total: 0, name: c.name }; });
 
                 matchingDates.forEach(dateKey => {
                     appData.slots.forEach(slot => {
@@ -864,7 +910,6 @@
 
                                 if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
                                     const status = phaseRecords[dateKey]?.[slot.id]?.[s.classId]?.[s.id]?.status || 'hadir';
-                                    const reason = phaseRecords[dateKey]?.[slot.id]?.[s.classId]?.[s.id]?.reason || '';
 
                                     totalPossibleEntries++;
                                     classStats[s.classId].total++;
@@ -874,7 +919,6 @@
                                         classStats[s.classId].hadir++;
                                     } else {
                                         totalTidakHadirCount++;
-                                        if (reason) reasons[reason] = (reasons[reason] || 0) + 1;
                                     }
                                 }
                             }
@@ -882,21 +926,42 @@
                     });
                 });
 
-                document.getElementById('statTotal').innerText = appData.students.length;
+                const visualChart = document.getElementById('visualBarChart');
+                visualChart.innerHTML = '';
+                appData.classes.forEach(c => {
+                    const st = classStats[c.id];
+                    const pct = st.total > 0 ? Math.round((st.hadir / st.total) * 100) : 0;
+                    let barColor = pct < 80 ? "bg-amber-500" : "bg-emerald-500";
+                    visualChart.innerHTML += `
+                        <div>
+                            <div class="flex justify-between text-[11px] font-bold mb-1">
+                                <span>${c.name}</span>
+                                <span>${pct}% (${st.hadir}/${st.total} Sesi)</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                                <div class="${barColor} h-full rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
 
-            } else { // Class Detail Bulanan
-                document.getElementById('standardAnalyticsView').classList.add('hidden');
-                document.getElementById('detailedClassAnalyticsView').classList.remove('hidden');
+                document.getElementById('statTotal').innerText = appData.students.length;
+                document.getElementById('statHadir').innerText = totalHadirCount;
+                document.getElementById('statTidakHadir').innerText = totalTidakHadirCount;
+                document.getElementById('statPeratus').innerText = totalPossibleEntries > 0 ? Math.round((totalHadirCount / totalPossibleEntries) * 100) + '%' : '0%';
+
+            } else {
+                document.getElementById('dailySummaryTableView').classList.add('hidden');
                 document.getElementById('visualChartContainer').classList.add('hidden');
+                document.getElementById('detailedClassAnalyticsView').classList.remove('hidden');
 
                 const selectedMonth = document.getElementById('analysisMonthFilter').value;
                 const classId = selectedClassId === "semua_kelas" ? appData.classes[0]?.id : selectedClassId;
                 const clsObj = appData.classes.find(c => c.id === classId);
                 const classStudents = appData.students.filter(s => s.classId === classId);
 
-                document.getElementById('detailedTableTitle').innerText = "Rekod Kehadiran Individu Pelajar (Bulanan)";
+                document.getElementById('detailedTableTitle').innerText = "Rekod Kehadiran Terperinci Pelajar";
                 document.getElementById('detailedClassTitle').innerText = `Kelas: ${clsObj?.name || '-'}`;
-                document.getElementById('thReasonHeader').innerText = "Sesi Hadir / Tidak Hadir (% Peratus)";
 
                 const matchingDates = Object.keys(phaseRecords).filter(d => d.startsWith(selectedMonth));
                 const tbody = document.getElementById('studentDetailedTableBody');
@@ -942,69 +1007,6 @@
                 document.getElementById('statHadir').innerText = totalClassHadir;
                 document.getElementById('statTidakHadir').innerText = totalClassTakHadir;
                 document.getElementById('statPeratus').innerText = (totalClassHadir + totalClassTakHadir) > 0 ? Math.round((totalClassHadir / (totalClassHadir + totalClassTakHadir)) * 100) + '%' : '0%';
-                return;
-            }
-
-            document.getElementById('statHadir').innerText = totalHadirCount;
-            document.getElementById('statTidakHadir').innerText = totalTidakHadirCount;
-            document.getElementById('statPeratus').innerText = totalPossibleEntries > 0 ? Math.round((totalHadirCount / totalPossibleEntries) * 100) + '%' : '0%';
-
-            // BINA CARTA VISUAL TAILWIND (BAR CHART)
-            const visualChart = document.getElementById('visualBarChart');
-            visualChart.innerHTML = '';
-
-            const classContainer = document.getElementById('classBreakdownList');
-            classContainer.innerHTML = '';
-
-            appData.classes.forEach(c => {
-                const st = classStats[c.id];
-                const pct = st.total > 0 ? Math.round((st.hadir / st.total) * 100) : 0;
-                
-                let barColor = "bg-emerald-500";
-                if (pct < 60) barColor = "bg-rose-500";
-                else if (pct < 80) barColor = "bg-amber-500";
-
-                // Visual Chart Component
-                visualChart.innerHTML += `
-                    <div>
-                        <div class="flex justify-between text-[11px] font-bold mb-1">
-                            <span class="text-slate-700">${c.name}</span>
-                            <span class="${pct < 80 ? 'text-rose-600' : 'text-emerald-600'} font-extrabold">${pct}%</span>
-                        </div>
-                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
-                            <div class="${barColor} h-full rounded-full transition-all duration-500 flex items-center justify-end pr-1 text-[9px] text-white font-bold" style="width: ${Math.max(pct, 5)}%">
-                                ${pct > 15 ? pct + '%' : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                classContainer.innerHTML += `
-                    <div>
-                        <div class="flex justify-between text-[11px] font-semibold mb-0.5">
-                            <span>${c.name}</span>
-                            <span>${pct}% (${st.hadir}/${st.total})</span>
-                        </div>
-                        <div class="w-full bg-slate-100 rounded-full h-1.5">
-                            <div class="bg-indigo-600 h-1.5 rounded-full" style="width: ${pct}%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            const reasonContainer = document.getElementById('reasonBreakdownList');
-            reasonContainer.innerHTML = '';
-            if (Object.keys(reasons).length === 0) {
-                reasonContainer.innerHTML = `<p class="text-slate-400 italic">Tiada rekod tidak hadir.</p>`;
-            } else {
-                for (const [r, count] of Object.entries(reasons)) {
-                    reasonContainer.innerHTML += `
-                        <div class="flex justify-between border-b pb-0.5 text-[11px]">
-                            <span class="text-slate-600">${r}</span>
-                            <span class="font-bold text-rose-600">${count} Sesi</span>
-                        </div>
-                    `;
-                }
             }
         }
 
@@ -1015,25 +1017,6 @@
             
             const phaseObj = appData.phases.find(p => p.id === appData.activePhaseId);
             document.getElementById('printPhaseTitle').innerText = phaseObj?.name || "";
-
-            const reportType = document.getElementById('reportTypeFilter').value;
-            const subj = document.getElementById('analysisSubjectFilter').value;
-            const classId = document.getElementById('analysisClassFilter').value;
-            const clsObj = appData.classes.find(c => c.id === classId);
-
-            if(reportType === 'daily') {
-                const dateVal = document.getElementById('analysisDateFilter').value;
-                document.getElementById('printReportHeadline').innerText = `LAPORAN KEHADIRAN HARIAN ${classId !== "semua_kelas" ? "(" + clsObj?.name + ")" : ""}`;
-                document.getElementById('printReportSubline').innerText = `Tarikh: ${dateVal} • Matapelajaran: ${subj}`;
-            } else if(reportType === 'monthly') {
-                const monthVal = document.getElementById('analysisMonthFilter').value;
-                document.getElementById('printReportHeadline').innerText = "LAPORAN BULANAN ANALISIS KEHADIRAN";
-                document.getElementById('printReportSubline').innerText = `Bulan: ${monthVal} • Matapelajaran: ${subj}`;
-            } else {
-                const monthVal = document.getElementById('analysisMonthFilter').value;
-                document.getElementById('printReportHeadline').innerText = `LAPORAN KEHADIRAN TERPERINCI PELAJAR (${clsObj?.name || ''})`;
-                document.getElementById('printReportSubline').innerText = `Bulan: ${monthVal} • Matapelajaran: ${subj}`;
-            }
 
             const printContent = document.getElementById('printableReportArea').innerHTML;
             const printWindow = window.open('', '_blank');
@@ -1070,9 +1053,96 @@
                 populateAdminDropdowns();
                 renderAdminClassList();
                 renderAdminStudentManagementList();
+                renderAdminSlotList();
+                renderAdminTracker();
             } else {
                 document.getElementById('pinErrorMsg').classList.remove('hidden');
             }
+        }
+
+        // --- PENGURUSAN SLOT (RESTORED IN V15) ---
+        function renderAdminSlotList() {
+            const container = document.getElementById('adminSlotList');
+            container.innerHTML = '';
+            appData.slots.forEach((s, idx) => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded border border-slate-200">
+                        <span><strong>${s.name}</strong> <span class="text-slate-500">(${s.time})</span></span>
+                        ${appData.slots.length > 1 ? `<button onclick="removeSlot('${s.id}')" class="text-rose-600 hover:underline">Padam</button>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function addNewSlot() {
+            const name = document.getElementById('newSlotName').value;
+            const time = document.getElementById('newSlotTime').value;
+            if (name && time) {
+                const newId = 'slot_' + Date.now();
+                appData.slots.push({ id: newId, name, time });
+                saveData();
+                document.getElementById('newSlotName').value = '';
+                document.getElementById('newSlotTime').value = '';
+                renderAdminSlotList();
+                renderSlotButtons();
+                populateAdminDropdowns();
+                alert("Slot Waktu Baharu Berjaya Ditambah!");
+            } else {
+                alert("Sila isi Nama Slot dan Masa.");
+            }
+        }
+
+        function removeSlot(id) {
+            if (appData.slots.length <= 1) {
+                alert("Mesti ada sekurang-kurangnya 1 slot waktu.");
+                return;
+            }
+            appData.slots = appData.slots.filter(s => s.id !== id);
+            if (selectedSlotId === id) selectedSlotId = appData.slots[0].id;
+            saveData();
+            renderAdminSlotList();
+            renderSlotButtons();
+            populateAdminDropdowns();
+        }
+
+        // --- PEMANTAUAN ADMIN STATUS PENGISIAN HARIAN (TRACKER LOGIC) ---
+        function renderAdminTracker() {
+            const dateVal = document.getElementById('adminTrackerDate').value;
+            const slotVal = document.getElementById('adminTrackerSlot').value;
+            const container = document.getElementById('adminTrackerList');
+            container.innerHTML = '';
+
+            const phaseId = appData.activePhaseId;
+            const dayRecords = appData.attendanceRecords[phaseId]?.[dateVal]?.[slotVal] || {};
+
+            appData.classes.forEach(cls => {
+                const classRecs = dayRecords[cls.id];
+                const sessionKey = `${phaseId}_${dateVal}_${slotVal}_${cls.id}`;
+                const currentSubj = appData.selectedSessionSubjects[sessionKey] || "-";
+
+                let isSubmitted = false;
+                let countFilled = 0;
+
+                if (classRecs && Object.keys(classRecs).length > 0) {
+                    isSubmitted = true;
+                    countFilled = Object.keys(classRecs).length;
+                }
+
+                container.innerHTML += `
+                    <div class="flex items-center justify-between p-2.5 rounded-lg border text-xs ${isSubmitted ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200'}">
+                        <div>
+                            <span class="font-bold text-slate-800">${cls.name}</span>
+                            <span class="text-[10px] text-slate-500 block">Subjek: ${currentSubj}</span>
+                        </div>
+                        <div class="text-right">
+                            ${isSubmitted 
+                                ? `<span class="bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-full text-[10px]"><i class="fa-solid fa-check"></i> Selesai (${countFilled} Pelajar)</span>` 
+                                : `<span class="bg-rose-600 text-white font-bold px-2.5 py-1 rounded-full text-[10px]"><i class="fa-solid fa-xmark"></i> Belum Ditanda</span>`
+                            }
+                        </div>
+                    </div>
+                `;
+            });
         }
 
         function lockAdmin() {
@@ -1138,15 +1208,21 @@
             const selBulk = document.getElementById('bulkImportClassSelect');
             const selFilter = document.getElementById('adminFilterStudentClass');
             const selClassFilter = document.getElementById('analysisClassFilter');
+            const selTrackerSlot = document.getElementById('adminTrackerSlot');
 
             selBulk.innerHTML = '';
             selFilter.innerHTML = '';
+            selTrackerSlot.innerHTML = '';
             selClassFilter.innerHTML = '<option value="semua_kelas">Semua Kelas</option>';
 
             appData.classes.forEach(c => {
                 selBulk.innerHTML += `<option value="${c.id}">${c.name}</option>`;
                 selFilter.innerHTML += `<option value="${c.id}">${c.name}</option>`;
                 selClassFilter.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+
+            appData.slots.forEach(s => {
+                selTrackerSlot.innerHTML += `<option value="${s.id}">${s.name} (${s.time})</option>`;
             });
         }
 
