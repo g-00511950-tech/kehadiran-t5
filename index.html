@@ -139,13 +139,14 @@
                         </button>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 text-xs items-end">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-2 text-xs items-end">
                         <div>
                             <label class="block font-medium text-slate-600 mb-1">Jenis Laporan:</label>
                             <select id="reportTypeFilter" onchange="toggleReportTypeUI()" class="w-full border border-slate-300 rounded-lg p-2 font-semibold">
                                 <option value="daily">Laporan Harian Keseluruhan</option>
                                 <option value="monthly">Laporan Bulanan Keseluruhan</option>
                                 <option value="class_detail">Laporan Terperinci Pelajar</option>
+                                <option value="teacher_evidence">Bukti Pelaksanaan Kelas (Rekod Guru)</option>
                             </select>
                         </div>
 
@@ -172,6 +173,12 @@
                         </div>
 
                         <div>
+                            <label class="block font-medium text-slate-600 mb-1">Guru:</label>
+                            <select id="analysisTeacherFilter" class="w-full border border-slate-300 rounded-lg p-2 font-semibold">
+                            </select>
+                        </div>
+
+                        <div>
                             <button onclick="renderAnalytics()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2 rounded-lg flex items-center justify-center gap-1.5 shadow-sm">
                                 <i class="fa-solid fa-magnifying-glass"></i> Cari Data
                             </button>
@@ -192,7 +199,7 @@
                     <!-- Kad Statistik Ringkas -->
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                         <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
-                            <div class="text-[11px] text-slate-500 font-medium">Jumlah Enrolmen</div>
+                            <div id="lblStatTotal" class="text-[11px] text-slate-500 font-medium">Jumlah Enrolmen</div>
                             <div id="statTotal" class="text-xl font-bold text-slate-800 mt-0.5">0</div>
                         </div>
                         <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
@@ -204,7 +211,7 @@
                             <div id="statTidakHadir" class="text-xl font-bold text-rose-600 mt-0.5">0</div>
                         </div>
                         <div class="bg-white p-3 rounded-xl border border-slate-200 text-center">
-                            <div class="text-[11px] text-indigo-600 font-medium">Peratus Kehadiran</div>
+                            <div class="text-[11px] text-indigo-600 font-medium" id="lblStatPeratus">Peratus Kehadiran</div>
                             <div id="statPeratus" class="text-xl font-bold text-indigo-600 mt-0.5">0%</div>
                         </div>
                     </div>
@@ -257,6 +264,30 @@
                                     </tr>
                                 </thead>
                                 <tbody id="studentDetailedTableBody" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PAPARAN BUKTI REKOD GURU (TEACHER EVIDENCE) -->
+                    <div id="teacherEvidenceView" class="hidden bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2 mb-3">
+                        <h3 class="font-bold text-xs text-slate-800 border-b pb-2 flex justify-between items-center">
+                            <span><i class="fa-solid fa-file-invoice text-emerald-600"></i> Senarai Sesi Kelas Yang Dijalankan</span>
+                            <span id="teacherEvidenceTitle" class="text-emerald-700 font-bold"></span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 border-b">
+                                        <th class="p-2 w-8">No</th>
+                                        <th class="p-2 w-28">Tarikh</th>
+                                        <th class="p-2 w-44">Slot Masa</th>
+                                        <th class="p-2 w-28">Kelas</th>
+                                        <th class="p-2">Matapelajaran</th>
+                                        <th class="p-2 text-center w-28">Pelajar Hadir</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teacherEvidenceTableBody" class="divide-y divide-slate-100">
                                 </tbody>
                             </table>
                         </div>
@@ -552,7 +583,6 @@
                 .then(res => res.json())
                 .then(cloudData => {
                     if(cloudData && Object.keys(cloudData).length > 0) {
-                        // Pastikan objek-objek sentiasa wujud (untuk elak ralat jika menggunakan data lama)
                         if (!cloudData.selectedSessionSubjects) cloudData.selectedSessionSubjects = {};
                         if (!cloudData.selectedSessionTeachers) cloudData.selectedSessionTeachers = {};
                         if (!cloudData.allTeachers) cloudData.allTeachers = ["Tiada Guru"];
@@ -575,7 +605,6 @@
         }
 
         window.onload = function() {
-            // Menghalang masalah error jika user gunakan data lama dari LocalStorage
             if (!appData.allTeachers) appData.allTeachers = ["Tiada Guru", "Cikgu Ali", "Cikgu Aminah"];
             if (!appData.selectedSessionTeachers) appData.selectedSessionTeachers = {};
 
@@ -700,7 +729,6 @@
             const selectedDateKey = document.getElementById('attendanceInputDate').value;
             const sessionKey = `${appData.activePhaseId}_${selectedDateKey}_${selectedSlotId}_${selectedClassId}`;
             
-            // Cegah TypeError: Cannot read properties of undefined
             if (!appData.selectedSessionSubjects) appData.selectedSessionSubjects = {};
             if (!appData.selectedSessionTeachers) appData.selectedSessionTeachers = {};
             if (!appData.allTeachers) appData.allTeachers = ["Tiada Guru"];
@@ -800,18 +828,28 @@
         }
 
         function confirmAndSaveAttendance() {
-            saveData();
-            
             const selectedDateKey = document.getElementById('attendanceInputDate').value;
             const phaseId = appData.activePhaseId;
-            const records = appData.attendanceRecords[phaseId]?.[selectedDateKey]?.[selectedSlotId]?.[selectedClassId] || {};
             const students = appData.students.filter(s => s.classId === selectedClassId);
+            
+            if (!appData.attendanceRecords[phaseId]) appData.attendanceRecords[phaseId] = {};
+            if (!appData.attendanceRecords[phaseId][selectedDateKey]) appData.attendanceRecords[phaseId][selectedDateKey] = {};
+            if (!appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId]) appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId] = {};
+            if (!appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId][selectedClassId]) appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId][selectedClassId] = {};
+            
+            const records = appData.attendanceRecords[phaseId][selectedDateKey][selectedSlotId][selectedClassId];
             
             let hadir = 0, tidakHadir = 0;
             students.forEach(s => {
-                if ((records[s.id]?.status || 'hadir') === 'hadir') hadir++;
+                if (!records[s.id]) {
+                    records[s.id] = { status: 'hadir', reason: '' };
+                }
+                
+                if (records[s.id].status === 'hadir') hadir++;
                 else tidakHadir++;
             });
+
+            saveData();
 
             const cls = appData.classes.find(c => c.id === selectedClassId);
             const slot = appData.slots.find(s => s.id === selectedSlotId);
@@ -858,27 +896,45 @@
             appData.allSubjects.forEach(s => {
                 selSubj.innerHTML += `<option value="${s}">${s}</option>`;
             });
+
+            const selTeacher = document.getElementById('analysisTeacherFilter');
+            selTeacher.innerHTML = '<option value="Semua Guru">Semua Guru</option>';
+            appData.allTeachers.forEach(t => {
+                selTeacher.innerHTML += `<option value="${t}">${t}</option>`;
+            });
+
             populateAdminDropdowns();
         }
 
         function renderAnalytics() {
             const reportType = document.getElementById('reportTypeFilter').value;
             const selectedSubject = document.getElementById('analysisSubjectFilter').value;
+            const selectedTeacher = document.getElementById('analysisTeacherFilter').value;
             const selectedClassId = document.getElementById('analysisClassFilter').value;
             const phaseId = appData.activePhaseId;
             const phaseRecords = appData.attendanceRecords[phaseId] || {};
+
+            // Mengemaskini label kad asas mengikut mod
+            document.getElementById('lblStatTotal').innerText = "Jumlah Enrolmen";
+            document.getElementById('lblStatHadir').innerText = "Hadir";
+            document.getElementById('lblStatTidakHadir').innerText = "Tidak Hadir";
+            document.getElementById('lblStatPeratus').innerText = "Peratus Kehadiran";
+
+            document.getElementById('printReportSubline').innerText = `Matapelajaran: ${selectedSubject} | Guru: ${selectedTeacher}`;
 
             let totalHadirCount = 0;
             let totalTidakHadirCount = 0;
             let totalPossibleEntries = 0;
 
             if (reportType === 'daily') {
+                document.getElementById('printReportHeadline').innerText = "RINGKASAN KEHADIRAN HARIAN KESELURUHAN KELAS";
                 const dateKey = document.getElementById('analysisDateFilter').value;
                 document.getElementById('dailyDateTitle').innerText = `Tarikh: ${dateKey}`;
 
                 document.getElementById('dailySummaryTableView').classList.remove('hidden');
                 document.getElementById('visualChartContainer').classList.remove('hidden');
                 document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
+                document.getElementById('teacherEvidenceView').classList.add('hidden');
 
                 const summaryTbody = document.getElementById('dailySummaryTableBody');
                 summaryTbody.innerHTML = '';
@@ -906,8 +962,10 @@
                         appData.slots.forEach(slot => {
                             const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${cls.id}`;
                             const subj = appData.selectedSessionSubjects?.[sessionKey] || appData.allSubjects[1];
+                            const tch = appData.selectedSessionTeachers?.[sessionKey] || appData.allTeachers[0];
 
-                            if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
+                            if ((selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) && 
+                                (selectedTeacher === "Semua Guru" || tch === selectedTeacher)) {
                                 const rec = phaseRecords[dateKey]?.[slot.id]?.[cls.id]?.[st.id];
                                 if (rec && rec.status === 'tidak_hadir') {
                                     isAbsent = true;
@@ -966,9 +1024,11 @@
                 document.getElementById('statPeratus').innerText = grandTotalStudents > 0 ? Math.round((totalHadirCount / grandTotalStudents) * 100) + '%' : '0%';
 
             } else if (reportType === 'monthly') {
+                document.getElementById('printReportHeadline').innerText = "RINGKASAN KEHADIRAN BULANAN KESELURUHAN KELAS";
                 document.getElementById('dailySummaryTableView').classList.add('hidden');
                 document.getElementById('visualChartContainer').classList.remove('hidden');
                 document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
+                document.getElementById('teacherEvidenceView').classList.add('hidden');
 
                 const selectedMonth = document.getElementById('analysisMonthFilter').value;
                 const matchingDates = Object.keys(phaseRecords).filter(d => d.startsWith(selectedMonth));
@@ -982,8 +1042,10 @@
                             if (selectedClassId === "semua_kelas" || s.classId === selectedClassId) {
                                 const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${s.classId}`;
                                 const subj = appData.selectedSessionSubjects?.[sessionKey] || appData.allSubjects[1];
+                                const tch = appData.selectedSessionTeachers?.[sessionKey] || appData.allTeachers[0];
 
-                                if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
+                                if ((selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) && 
+                                    (selectedTeacher === "Semua Guru" || tch === selectedTeacher)) {
                                     const status = phaseRecords[dateKey]?.[slot.id]?.[s.classId]?.[s.id]?.status || 'hadir';
 
                                     totalPossibleEntries++;
@@ -1025,10 +1087,12 @@
                 document.getElementById('statTidakHadir').innerText = totalTidakHadirCount;
                 document.getElementById('statPeratus').innerText = totalPossibleEntries > 0 ? Math.round((totalHadirCount / totalPossibleEntries) * 100) + '%' : '0%';
 
-            } else {
+            } else if (reportType === 'class_detail') {
+                document.getElementById('printReportHeadline').innerText = "LAPORAN KEHADIRAN TERPERINCI PELAJAR";
                 document.getElementById('dailySummaryTableView').classList.add('hidden');
                 document.getElementById('visualChartContainer').classList.add('hidden');
                 document.getElementById('detailedClassAnalyticsView').classList.remove('hidden');
+                document.getElementById('teacherEvidenceView').classList.add('hidden');
 
                 const selectedMonth = document.getElementById('analysisMonthFilter').value;
                 const classId = selectedClassId === "semua_kelas" ? appData.classes[0]?.id : selectedClassId;
@@ -1054,8 +1118,10 @@
                         appData.slots.forEach(slot => {
                             const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${classId}`;
                             const subj = appData.selectedSessionSubjects?.[sessionKey] || appData.allSubjects[1];
+                            const tch = appData.selectedSessionTeachers?.[sessionKey] || appData.allTeachers[0];
 
-                            if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
+                            if ((selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) &&
+                                (selectedTeacher === "Semua Guru" || tch === selectedTeacher)) {
                                 countSessions++;
                                 const rec = phaseRecords[dateKey]?.[slot.id]?.[classId]?.[st.id];
                                 if (rec && rec.status === 'tidak_hadir') studentTakHadir++;
@@ -1082,6 +1148,82 @@
                 document.getElementById('statHadir').innerText = totalClassHadir;
                 document.getElementById('statTidakHadir').innerText = totalClassTakHadir;
                 document.getElementById('statPeratus').innerText = (totalClassHadir + totalClassTakHadir) > 0 ? Math.round((totalClassHadir / (totalClassHadir + totalClassTakHadir)) * 100) + '%' : '0%';
+
+            } else if (reportType === 'teacher_evidence') {
+                // MOD BUKTI PELAKSANAAN KELAS GURU
+                document.getElementById('printReportHeadline').innerText = `REKOD BUKTI PELAKSANAAN KELAS: ${selectedTeacher}`;
+                document.getElementById('dailySummaryTableView').classList.add('hidden');
+                document.getElementById('visualChartContainer').classList.add('hidden');
+                document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
+                document.getElementById('teacherEvidenceView').classList.remove('hidden');
+
+                const selectedMonth = document.getElementById('analysisMonthFilter').value;
+                document.getElementById('teacherEvidenceTitle').innerText = `Bulan: ${selectedMonth}`;
+
+                const matchingDates = Object.keys(phaseRecords).filter(d => d.startsWith(selectedMonth)).sort();
+                const tbody = document.getElementById('teacherEvidenceTableBody');
+                tbody.innerHTML = '';
+
+                let sessionCount = 0;
+                let grandTotalStudentsHadir = 0;
+
+                matchingDates.forEach(dateKey => {
+                    appData.slots.forEach(slot => {
+                        appData.classes.forEach(cls => {
+                            if (selectedClassId === "semua_kelas" || cls.id === selectedClassId) {
+                                const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${cls.id}`;
+                                const subj = appData.selectedSessionSubjects?.[sessionKey] || appData.allSubjects[1];
+                                const tch = appData.selectedSessionTeachers?.[sessionKey] || appData.allTeachers[0];
+
+                                const daySlotClassRecs = phaseRecords[dateKey]?.[slot.id]?.[cls.id];
+
+                                // Jika ada pengisian dibuat DAN sepadan dengan Guru / Subjek yang dipilih
+                                if (daySlotClassRecs && Object.keys(daySlotClassRecs).length > 0) {
+                                    if ((selectedTeacher === "Semua Guru" || tch === selectedTeacher) &&
+                                        (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject)) {
+                                        
+                                        sessionCount++;
+                                        const classStudents = appData.students.filter(s => s.classId === cls.id);
+                                        let classHadirCount = 0;
+
+                                        classStudents.forEach(st => {
+                                            const rec = daySlotClassRecs[st.id];
+                                            if (!rec || rec.status === 'hadir') classHadirCount++;
+                                        });
+
+                                        grandTotalStudentsHadir += classHadirCount;
+
+                                        tbody.innerHTML += `
+                                            <tr class="hover:bg-slate-50">
+                                                <td class="p-2 font-bold text-slate-400">${sessionCount}</td>
+                                                <td class="p-2 font-bold text-slate-700">${dateKey}</td>
+                                                <td class="p-2 font-medium text-slate-600">${slot.name} (${slot.time})</td>
+                                                <td class="p-2 font-bold text-indigo-700">${cls.name}</td>
+                                                <td class="p-2 font-medium text-slate-800">${subj}</td>
+                                                <td class="p-2 text-center font-bold text-emerald-600">${classHadirCount} / ${classStudents.length}</td>
+                                            </tr>
+                                        `;
+                                    }
+                                }
+                            }
+                        });
+                    });
+                });
+
+                if (sessionCount === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">Tiada rekod pelaksanaan kelas ditemui bagi kriteria ini.</td></tr>`;
+                }
+
+                // Tukar Kad Statistik untuk Guru
+                document.getElementById('lblStatTotal').innerText = "Jumlah Sesi Kelas";
+                document.getElementById('lblStatHadir').innerText = "Jumlah Pelajar Hadir";
+                document.getElementById('lblStatTidakHadir').innerText = "Status Rekod";
+                document.getElementById('lblStatPeratus').innerText = "Purata Pelajar/Sesi";
+
+                document.getElementById('statTotal').innerText = sessionCount;
+                document.getElementById('statHadir').innerText = grandTotalStudentsHadir;
+                document.getElementById('statTidakHadir').innerText = sessionCount > 0 ? "Disahkan" : "Tiada Rekod";
+                document.getElementById('statPeratus').innerText = sessionCount > 0 ? Math.round(grandTotalStudentsHadir / sessionCount) : 0;
             }
         }
 
@@ -1136,7 +1278,6 @@
             }
         }
 
-        // --- PENGURUSAN SLOT (RESTORED IN V15) ---
         function renderAdminSlotList() {
             const container = document.getElementById('adminSlotList');
             container.innerHTML = '';
@@ -1181,7 +1322,6 @@
             populateAdminDropdowns();
         }
 
-        // --- PEMANTAUAN ADMIN STATUS PENGISIAN HARIAN (TRACKER LOGIC) ---
         function renderAdminTracker() {
             const dateVal = document.getElementById('adminTrackerDate').value;
             const slotVal = document.getElementById('adminTrackerSlot').value;
@@ -1453,7 +1593,6 @@
             }
         }
 
-        // --- GURU MATAPELAJARAN ADMIN ---
         function renderAdminTeacherList() {
             const container = document.getElementById('adminTeacherList');
             container.innerHTML = '';
@@ -1486,7 +1625,6 @@
             renderStudentList();
         }
 
-        // --- FUNGSI UPLOAD CSV ---
         function handleCSVUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1497,11 +1635,9 @@
                 const lines = text.split('\n');
                 let newStudentsCount = 0;
 
-                // Mula dari 1, membiarkan tajuk jadual (Header) di baris 0
                 for(let i = 1; i < lines.length; i++) {
                     if (lines[i].trim() === '') continue;
                     
-                    // Pisahkan data menggunakan comma
                     const cols = lines[i].split(',');
                     if (cols.length >= 3) {
                         const id = cols[0].trim();
@@ -1509,7 +1645,6 @@
                         const className = cols[2].trim();
 
                         if (!appData.students.find(s => s.id === id)) {
-                            // Semak jika nama kelas telah wujud, jika tidak ia akan buat kelas baharu
                             let classObj = appData.classes.find(c => c.name.toLowerCase() === className.toLowerCase());
                             if(!classObj) {
                                 classObj = { id: 'c' + Date.now() + Math.floor(Math.random()*100), name: className };
@@ -1524,12 +1659,11 @@
                 saveData();
                 alert(`${newStudentsCount} pelajar berjaya diimport dari fail CSV!`);
                 
-                // Refresh UI berkaitan
                 renderAdminStudentManagementList();
                 renderClassButtons();
                 populateAdminDropdowns();
                 renderAdminClassList();
-                event.target.value = ''; // Reset input
+                event.target.value = '';
             };
             reader.readAsText(file);
         }
