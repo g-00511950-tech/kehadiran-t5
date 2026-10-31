@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Kehadiran Kelas Tambahan T5 Online v15</title>
+    
+    <!-- Tetapan Ikon untuk iPad / PWA / Shortcut -->
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+    <meta name="apple-mobile-web-app-title" content="Hadir T5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -96,6 +104,11 @@
                             <div class="flex items-center gap-2 mt-1">
                                 <label class="text-xs font-bold text-slate-600">Matapelajaran:</label>
                                 <select id="subjectSelectForSession" onchange="updateSelectedSubjectForSession(this.value)" class="text-xs border border-indigo-300 rounded-md p-1 font-semibold text-indigo-700 bg-white focus:outline-none">
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <label class="text-xs font-bold text-slate-600">Guru Matapelajaran:</label>
+                                <select id="teacherSelectForSession" onchange="updateSelectedTeacherForSession(this.value)" class="text-xs border border-emerald-300 rounded-md p-1 font-semibold text-emerald-700 bg-white focus:outline-none">
                                 </select>
                             </div>
                         </div>
@@ -350,12 +363,21 @@
                         <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
                             <i class="fa-solid fa-users-line text-indigo-600"></i> Tambah Nama Pelajar Secara Pukal (Bulk Import)
                         </h3>
-                        <p class="text-xs text-slate-500">Copy & Paste senarai nama dari Excel/Word (satu nama setiap baris):</p>
+                        
+                        <div class="bg-indigo-50 border border-indigo-200 p-3 rounded-lg mb-3">
+                            <label class="block text-xs font-bold text-indigo-800 mb-1 flex items-center gap-2">
+                                <i class="fa-solid fa-file-csv"></i> Muat Naik Fail CSV (Dari Google Sheet)
+                            </label>
+                            <p class="text-[10px] text-indigo-600 mb-2">Pastikan format CSV mempunyai kolum: ID Pelajar, Nama Pelajar, Kelas (Cth Kelas: 5 STEM)</p>
+                            <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVUpload(event)" class="text-xs text-slate-600 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 w-full cursor-pointer">
+                        </div>
+
+                        <p class="text-xs text-slate-500">Atau Copy & Paste senarai nama dari Excel/Word (satu nama setiap baris):</p>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <select id="bulkImportClassSelect" class="text-xs border border-slate-300 rounded p-2 font-bold"></select>
                             <textarea id="bulkImportTextarea" rows="4" placeholder="Contoh:&#10;AHMAD ALBAM BIN ZULKIFLI&#10;SITI NURHALIZA BINTI ABU" class="sm:col-span-2 text-xs border border-slate-300 rounded p-2"></textarea>
                         </div>
-                        <button onclick="executeBulkImport()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded font-bold transition-all">+ Tambah Semua Nama Ke Kelas</button>
+                        <button onclick="executeBulkImport()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded font-bold transition-all w-full md:w-auto">+ Tambah Semua Nama Ke Kelas</button>
                     </div>
 
                     <!-- EDIT/PADAM PELAJAR -->
@@ -376,6 +398,18 @@
                         <div class="flex gap-2">
                             <input type="text" id="newSubjectName" placeholder="Nama Matapelajaran Baharu" class="text-xs border border-slate-300 rounded p-2 flex-1">
                             <button onclick="addNewSubject()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Subjek</button>
+                        </div>
+                    </div>
+
+                    <!-- GURU MATAPELAJARAN -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-chalkboard-user text-indigo-600"></i> Pengurusan Senarai Guru
+                        </h3>
+                        <div id="adminTeacherList" class="space-y-2"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="newTeacherName" placeholder="Nama Guru Baharu" class="text-xs border border-slate-300 rounded p-2 flex-1">
+                            <button onclick="addNewTeacher()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Guru</button>
                         </div>
                     </div>
 
@@ -439,6 +473,7 @@
                 <div class="flex justify-between"><span class="text-slate-500">Slot Waktu:</span> <span id="popSlot" class="font-bold"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">Kelas:</span> <span id="popClass" class="font-bold"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">Matapelajaran:</span> <span id="popSubject" class="font-bold text-indigo-600"></span></div>
+                <div class="flex justify-between"><span class="text-slate-500">Guru:</span> <span id="popTeacher" class="font-bold text-emerald-600"></span></div>
                 <div class="border-t pt-1 flex justify-between"><span class="text-slate-500">Jumlah Pelajar Hadir:</span> <span id="popHadir" class="font-bold text-emerald-600"></span></div>
                 <div class="flex justify-between"><span class="text-slate-500">Jumlah Tidak Hadir:</span> <span id="popTidakHadir" class="font-bold text-rose-600"></span></div>
             </div>
@@ -477,6 +512,8 @@
                 "Pendidikan Islam", "Matematik Tambahan", "Fizik", "Kimia", "Biologi", "Prinsip Perakaunan"
             ],
             selectedSessionSubjects: {},
+            allTeachers: ["Tiada Guru", "Cikgu Ali", "Cikgu Aminah"],
+            selectedSessionTeachers: {},
             students: [
                 { id: "s1", classId: "c1", name: "Ahmad Albab Bin Zulkifli" },
                 { id: "s2", classId: "c1", name: "Siti Nurhaliza Binti Abu" },
@@ -515,6 +552,11 @@
                 .then(res => res.json())
                 .then(cloudData => {
                     if(cloudData && Object.keys(cloudData).length > 0) {
+                        // Pastikan objek-objek sentiasa wujud (untuk elak ralat jika menggunakan data lama)
+                        if (!cloudData.selectedSessionSubjects) cloudData.selectedSessionSubjects = {};
+                        if (!cloudData.selectedSessionTeachers) cloudData.selectedSessionTeachers = {};
+                        if (!cloudData.allTeachers) cloudData.allTeachers = ["Tiada Guru"];
+                        
                         appData = cloudData;
                         localStorage.setItem('kehadiran_t5_online', JSON.stringify(appData));
                         renderIdentity();
@@ -533,6 +575,10 @@
         }
 
         window.onload = function() {
+            // Menghalang masalah error jika user gunakan data lama dari LocalStorage
+            if (!appData.allTeachers) appData.allTeachers = ["Tiada Guru", "Cikgu Ali", "Cikgu Aminah"];
+            if (!appData.selectedSessionTeachers) appData.selectedSessionTeachers = {};
+
             const todayStr = new Date().toISOString().split('T')[0];
             const currentMonthStr = todayStr.substring(0, 7);
 
@@ -653,12 +699,25 @@
 
             const selectedDateKey = document.getElementById('attendanceInputDate').value;
             const sessionKey = `${appData.activePhaseId}_${selectedDateKey}_${selectedSlotId}_${selectedClassId}`;
+            
+            // Cegah TypeError: Cannot read properties of undefined
+            if (!appData.selectedSessionSubjects) appData.selectedSessionSubjects = {};
+            if (!appData.selectedSessionTeachers) appData.selectedSessionTeachers = {};
+            if (!appData.allTeachers) appData.allTeachers = ["Tiada Guru"];
+
             const currentSubj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1] || "Bahasa Melayu";
+            const currentTeacher = appData.selectedSessionTeachers[sessionKey] || appData.allTeachers[0] || "Tiada Guru";
 
             const subjDropdown = document.getElementById('subjectSelectForSession');
             subjDropdown.innerHTML = '';
             appData.allSubjects.filter(sb => sb !== 'Semua Matapelajaran').forEach(sb => {
                 subjDropdown.innerHTML += `<option value="${sb}" ${sb === currentSubj ? 'selected' : ''}>${sb}</option>`;
+            });
+
+            const teacherDropdown = document.getElementById('teacherSelectForSession');
+            teacherDropdown.innerHTML = '';
+            appData.allTeachers.forEach(tch => {
+                teacherDropdown.innerHTML += `<option value="${tch}" ${tch === currentTeacher ? 'selected' : ''}>${tch}</option>`;
             });
 
             const students = appData.students.filter(s => s.classId === selectedClassId);
@@ -700,9 +759,18 @@
         }
 
         function updateSelectedSubjectForSession(subjVal) {
+            if (!appData.selectedSessionSubjects) appData.selectedSessionSubjects = {};
             const selectedDateKey = document.getElementById('attendanceInputDate').value;
             const sessionKey = `${appData.activePhaseId}_${selectedDateKey}_${selectedSlotId}_${selectedClassId}`;
             appData.selectedSessionSubjects[sessionKey] = subjVal;
+            saveData();
+        }
+
+        function updateSelectedTeacherForSession(teacherVal) {
+            if (!appData.selectedSessionTeachers) appData.selectedSessionTeachers = {};
+            const selectedDateKey = document.getElementById('attendanceInputDate').value;
+            const sessionKey = `${appData.activePhaseId}_${selectedDateKey}_${selectedSlotId}_${selectedClassId}`;
+            appData.selectedSessionTeachers[sessionKey] = teacherVal;
             saveData();
         }
 
@@ -747,15 +815,22 @@
 
             const cls = appData.classes.find(c => c.id === selectedClassId);
             const slot = appData.slots.find(s => s.id === selectedSlotId);
+            
             const phaseObj = appData.phases.find(p => p.id === phaseId);
             const sessionKey = `${phaseId}_${selectedDateKey}_${selectedSlotId}_${selectedClassId}`;
+            
+            if (!appData.selectedSessionSubjects) appData.selectedSessionSubjects = {};
+            if (!appData.selectedSessionTeachers) appData.selectedSessionTeachers = {};
+
             const currentSubj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+            const currentTeacher = appData.selectedSessionTeachers[sessionKey] || appData.allTeachers[0];
 
             document.getElementById('popPhase').innerText = phaseObj?.name || "-";
             document.getElementById('popDate').innerText = selectedDateKey;
             document.getElementById('popSlot').innerText = `${slot.name} (${slot.time})`;
             document.getElementById('popClass').innerText = cls.name;
             document.getElementById('popSubject').innerText = currentSubj;
+            document.getElementById('popTeacher').innerText = currentTeacher;
             document.getElementById('popHadir').innerText = `${hadir} Pelajar`;
             document.getElementById('popTidakHadir').innerText = `${tidakHadir} Pelajar`;
 
@@ -830,7 +905,7 @@
 
                         appData.slots.forEach(slot => {
                             const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${cls.id}`;
-                            const subj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+                            const subj = appData.selectedSessionSubjects?.[sessionKey] || appData.allSubjects[1];
 
                             if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
                                 const rec = phaseRecords[dateKey]?.[slot.id]?.[cls.id]?.[st.id];
@@ -906,7 +981,7 @@
                         appData.students.forEach(s => {
                             if (selectedClassId === "semua_kelas" || s.classId === selectedClassId) {
                                 const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${s.classId}`;
-                                const subj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+                                const subj = appData.selectedSessionSubjects?.[sessionKey] || appData.allSubjects[1];
 
                                 if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
                                     const status = phaseRecords[dateKey]?.[slot.id]?.[s.classId]?.[s.id]?.status || 'hadir';
@@ -978,7 +1053,7 @@
                     matchingDates.forEach(dateKey => {
                         appData.slots.forEach(slot => {
                             const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${classId}`;
-                            const subj = appData.selectedSessionSubjects[sessionKey] || appData.allSubjects[1];
+                            const subj = appData.selectedSessionSubjects?.[sessionKey] || appData.allSubjects[1];
 
                             if (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject) {
                                 countSessions++;
@@ -1050,6 +1125,7 @@
                 document.getElementById('cfgSchoolLogo').value = appData.schoolLogo || '';
                 renderAdminPhaseList();
                 renderAdminSubjectList();
+                renderAdminTeacherList();
                 populateAdminDropdowns();
                 renderAdminClassList();
                 renderAdminStudentManagementList();
@@ -1118,7 +1194,7 @@
             appData.classes.forEach(cls => {
                 const classRecs = dayRecords[cls.id];
                 const sessionKey = `${phaseId}_${dateVal}_${slotVal}_${cls.id}`;
-                const currentSubj = appData.selectedSessionSubjects[sessionKey] || "-";
+                const currentSubj = appData.selectedSessionSubjects?.[sessionKey] || "-";
 
                 let isSubmitted = false;
                 let countFilled = 0;
@@ -1375,6 +1451,87 @@
                 alert("PIN Admin Berjaya Diperkemaskan!");
                 document.getElementById('newPinInput').value = '';
             }
+        }
+
+        // --- GURU MATAPELAJARAN ADMIN ---
+        function renderAdminTeacherList() {
+            const container = document.getElementById('adminTeacherList');
+            container.innerHTML = '';
+            appData.allTeachers.forEach((tch, idx) => {
+                container.innerHTML += `
+                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded border border-slate-200">
+                        <span><strong>${tch}</strong></span>
+                        ${idx > 0 ? `<button onclick="removeTeacher(${idx})" class="text-rose-600 hover:underline">Padam</button>` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function addNewTeacher() {
+            const name = document.getElementById('newTeacherName').value;
+            if (name) {
+                appData.allTeachers.push(name);
+                saveData();
+                document.getElementById('newTeacherName').value = '';
+                renderAdminTeacherList();
+                renderStudentList();
+                alert("Guru Berjaya Ditambah!");
+            }
+        }
+
+        function removeTeacher(idx) {
+            appData.allTeachers.splice(idx, 1);
+            saveData();
+            renderAdminTeacherList();
+            renderStudentList();
+        }
+
+        // --- FUNGSI UPLOAD CSV ---
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const lines = text.split('\n');
+                let newStudentsCount = 0;
+
+                // Mula dari 1, membiarkan tajuk jadual (Header) di baris 0
+                for(let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim() === '') continue;
+                    
+                    // Pisahkan data menggunakan comma
+                    const cols = lines[i].split(',');
+                    if (cols.length >= 3) {
+                        const id = cols[0].trim();
+                        const name = cols[1].trim().toUpperCase();
+                        const className = cols[2].trim();
+
+                        if (!appData.students.find(s => s.id === id)) {
+                            // Semak jika nama kelas telah wujud, jika tidak ia akan buat kelas baharu
+                            let classObj = appData.classes.find(c => c.name.toLowerCase() === className.toLowerCase());
+                            if(!classObj) {
+                                classObj = { id: 'c' + Date.now() + Math.floor(Math.random()*100), name: className };
+                                appData.classes.push(classObj);
+                            }
+                            appData.students.push({ id, name, classId: classObj.id });
+                            newStudentsCount++;
+                        }
+                    }
+                }
+                
+                saveData();
+                alert(`${newStudentsCount} pelajar berjaya diimport dari fail CSV!`);
+                
+                // Refresh UI berkaitan
+                renderAdminStudentManagementList();
+                renderClassButtons();
+                populateAdminDropdowns();
+                renderAdminClassList();
+                event.target.value = ''; // Reset input
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
