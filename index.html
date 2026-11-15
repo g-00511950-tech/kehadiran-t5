@@ -277,7 +277,7 @@
                             </h3>
                             <div class="text-right">
                                 <span id="teacherEvidenceTitle" class="text-emerald-700 font-bold text-xs block"></span>
-                                <span id="teacherRateSubtitle" class="text-[10px] text-slate-500 font-semibold"></span>
+                                <span id="teacherRateSubtitle" class="text-[10px] text-slate-500 font-semibold">Kadar Bayaran Mengikut Slot Waktu</span>
                             </div>
                         </div>
                         <div class="overflow-x-auto">
@@ -376,37 +376,20 @@
                     <!-- MODUL ADMIN: PENGURUSAN SLOT & WAKTU (RESTORED IN V15) -->
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
                         <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-clock text-indigo-600"></i> Pengurusan Slot Waktu Kelas Tambahan
+                            <i class="fa-solid fa-clock text-indigo-600"></i> Pengurusan Slot Waktu & Kadar Bayaran (RM / Jam)
                         </h3>
                         <p class="text-[11px] text-slate-500 bg-amber-50 p-2 rounded border border-amber-200">
-                            <i class="fa-solid fa-circle-info text-amber-600"></i> <b>Tip Kiraan Jam Automatik:</b> Pastikan format masa ditulis seperti <b>2:30 PM - 3:30 PM</b> atau <b>8:00 PM - 9:30 PM</b> supaya sistem dapat mengira durasi jam & tuntutan secara tepat.
+                            <i class="fa-solid fa-circle-info text-amber-600"></i> <b>Tip Kiraan Jam Automatik:</b> Pastikan format masa ditulis seperti <b>2:30 PM - 3:30 PM</b> atau <b>8:00 PM - 9:30 PM</b> dan tetapkan kadar bayaran (RM/Jam) bagi setiap slot.
                         </p>
                         <div id="adminSlotList" class="space-y-2"></div>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1">
                             <input type="text" id="newSlotName" placeholder="Nama Slot (Cth: Slot 4)" class="text-xs border border-slate-300 rounded p-2">
                             <input type="text" id="newSlotTime" placeholder="Masa (Cth: 4:30 PM - 5:30 PM)" class="text-xs border border-slate-300 rounded p-2">
+                            <div class="relative">
+                                <span class="absolute left-2.5 top-2 text-xs font-bold text-slate-400">RM</span>
+                                <input type="number" step="0.01" id="newSlotRate" placeholder="Kadar/Jam (Cth: 40)" class="w-full text-xs border border-slate-300 rounded p-2 pl-8 font-semibold text-emerald-700">
+                            </div>
                             <button onclick="addNewSlot()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Slot</button>
-                        </div>
-                    </div>
-
-                    <!-- PENGURUSAN KADAR TUNTUTAN BAYARAN (RATE PER JAM) -->
-                    <div class="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm space-y-3">
-                        <h3 class="font-bold text-sm text-emerald-900 border-b pb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-money-bill-wave text-emerald-600"></i> Tetapan Kadar Tuntutan Bayaran Kelas (Rate Per Jam)
-                        </h3>
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-3 text-xs">
-                            <div class="flex-1">
-                                <label class="block font-medium text-slate-600 mb-1">Kadar Bayaran Sejam (RM):</label>
-                                <div class="relative">
-                                    <span class="absolute left-3 top-2 font-bold text-slate-500">RM</span>
-                                    <input type="number" step="0.01" id="cfgHourlyRate" placeholder="50.00" class="w-full border border-slate-300 rounded p-2 pl-9 font-bold text-emerald-700">
-                                </div>
-                            </div>
-                            <div class="sm:pt-5">
-                                <button onclick="saveHourlyRate()" class="w-full sm:w-auto bg-emerald-600 text-white text-xs px-4 py-2.5 rounded font-bold hover:bg-emerald-700 shadow-sm">
-                                    <i class="fa-solid fa-floppy-disk"></i> Simpan Kadar Bayaran
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -563,9 +546,9 @@
                 { id: "p2", name: "Fasa 2: Anjakan Intensif SPM" }
             ],
             slots: [
-                { id: "slot_1", name: "Slot 1", time: "2:30 PM - 3:30 PM" },
-                { id: "slot_2", name: "Slot 2", time: "3:30 PM - 4:30 PM" },
-                { id: "slot_3", name: "Slot 3", time: "8:00 PM - 9:30 PM" }
+                { id: "slot_1", name: "Slot 1", time: "2:30 PM - 3:30 PM", rate: 20.00 },
+                { id: "slot_2", name: "Slot 2", time: "3:30 PM - 4:30 PM", rate: 20.00 },
+                { id: "slot_3", name: "Slot 3", time: "8:00 PM - 9:30 PM", rate: 40.00 }
             ],
             classes: [
                 { id: "c1", name: "5 STEM" },
@@ -1184,8 +1167,8 @@
                 document.getElementById('statPeratus').innerText = (totalClassHadir + totalClassTakHadir) > 0 ? Math.round((totalClassHadir / (totalClassHadir + totalClassTakHadir)) * 100) + '%' : '0%';
 
             } else if (reportType === 'teacher_evidence') {
-                // MOD BUKTI PELAKSANAAN KELAS GURU & KIRAAN CLAIM
-                const hourlyRate = parseFloat(appData.hourlyRate) || 0;
+                // MOD BUKTI PELAKSANAAN KELAS GURU & KIRAAN CLAIM MENGIKUT SLOT
+                const defaultFallbackRate = parseFloat(appData.hourlyRate) || 50.00;
                 document.getElementById('printReportHeadline').innerText = `PENYATA TUNTUTAN & BUKTI KELAS TAMBAHAN: ${selectedTeacher.toUpperCase()}`;
                 document.getElementById('dailySummaryTableView').classList.add('hidden');
                 document.getElementById('visualChartContainer').classList.add('hidden');
@@ -1194,7 +1177,7 @@
 
                 const selectedMonth = document.getElementById('analysisMonthFilter').value;
                 document.getElementById('teacherEvidenceTitle').innerText = `Bulan Tuntutan: ${selectedMonth}`;
-                document.getElementById('teacherRateSubtitle').innerText = `Kadar Bayaran Semasa: RM ${hourlyRate.toFixed(2)} / Jam`;
+                document.getElementById('teacherRateSubtitle').innerText = `Kadar Bayaran: Dikira Mengikut Ketetapan Slot`;
 
                 const matchingDates = Object.keys(phaseRecords).filter(d => d.startsWith(selectedMonth)).sort();
                 const tbody = document.getElementById('teacherEvidenceTableBody');
@@ -1205,9 +1188,12 @@
                 let sessionCount = 0;
                 let grandTotalHours = 0;
                 let grandTotalClaim = 0;
+                let ratesUsed = new Set();
 
                 matchingDates.forEach(dateKey => {
                     appData.slots.forEach(slot => {
+                        const slotRate = (slot.rate !== undefined) ? parseFloat(slot.rate) : defaultFallbackRate;
+                        
                         appData.classes.forEach(cls => {
                             if (selectedClassId === "semua_kelas" || cls.id === selectedClassId) {
                                 const sessionKey = `${phaseId}_${dateKey}_${slot.id}_${cls.id}`;
@@ -1222,17 +1208,11 @@
                                         (selectedSubject === "Semua Matapelajaran" || subj === selectedSubject)) {
                                         
                                         sessionCount++;
-                                        const classStudents = appData.students.filter(s => s.classId === cls.id);
-                                        let classHadirCount = 0;
-
-                                        classStudents.forEach(st => {
-                                            const rec = daySlotClassRecs[st.id];
-                                            if (!rec || rec.status === 'hadir') classHadirCount++;
-                                        });
+                                        ratesUsed.add(slotRate.toFixed(2));
 
                                         // Kira durasi jam daripada teks masa slot (Cth: "2:30 PM - 3:30 PM")
                                         const durationHours = calculateSlotDuration(slot.time);
-                                        const sessionClaim = durationHours * hourlyRate;
+                                        const sessionClaim = durationHours * slotRate;
 
                                         grandTotalHours += durationHours;
                                         grandTotalClaim += sessionClaim;
@@ -1247,7 +1227,7 @@
                                                     <span class="font-bold text-slate-800">${slot.name}</span> (${slot.time})
                                                 </td>
                                                 <td class="p-2 text-center font-bold text-indigo-700">${durationHours.toFixed(1)}</td>
-                                                <td class="p-2 text-right text-slate-600">${hourlyRate.toFixed(2)}</td>
+                                                <td class="p-2 text-right text-slate-600">${slotRate.toFixed(2)}</td>
                                                 <td class="p-2 text-right font-extrabold text-emerald-700">${sessionClaim.toFixed(2)}</td>
                                             </tr>
                                         `;
@@ -1277,9 +1257,16 @@
                 document.getElementById('lblStatTidakHadir').innerText = "Kadar Sejam";
                 document.getElementById('lblStatPeratus').innerText = "Jumlah Tuntutan";
 
+                let rateDisplay = "RM 0.00";
+                if (ratesUsed.size === 1) {
+                    rateDisplay = `RM ${Array.from(ratesUsed)[0]}`;
+                } else if (ratesUsed.size > 1) {
+                    rateDisplay = "Mengikut Slot";
+                }
+
                 document.getElementById('statTotal').innerText = `${sessionCount} Sesi`;
                 document.getElementById('statHadir').innerText = `${grandTotalHours.toFixed(1)} Jam`;
-                document.getElementById('statTidakHadir').innerText = `RM ${hourlyRate.toFixed(2)}`;
+                document.getElementById('statTidakHadir').innerText = rateDisplay;
                 document.getElementById('statPeratus').innerText = `RM ${grandTotalClaim.toFixed(2)}`;
             }
         }
@@ -1358,7 +1345,6 @@
                 document.getElementById('cfgSchoolName').value = appData.schoolName || '';
                 document.getElementById('cfgAppTitle').value = appData.appTitle || '';
                 document.getElementById('cfgSchoolLogo').value = appData.schoolLogo || '';
-                document.getElementById('cfgHourlyRate').value = (appData.hourlyRate !== undefined) ? appData.hourlyRate : 50.00;
                 renderAdminPhaseList();
                 renderAdminSubjectList();
                 renderAdminTeacherList();
@@ -1372,43 +1358,65 @@
             }
         }
 
-        function saveHourlyRate() {
-            const rateVal = parseFloat(document.getElementById('cfgHourlyRate').value);
-            if (!isNaN(rateVal) && rateVal >= 0) {
-                appData.hourlyRate = rateVal;
-                saveData();
-                alert(`Kadar bayaran berjaya dikemaskini kepada RM ${rateVal.toFixed(2)} / jam!`);
-            } else {
-                alert("Sila masukkan nilai kadar bayaran yang sah.");
-            }
-        }
-
         function renderAdminSlotList() {
             const container = document.getElementById('adminSlotList');
             container.innerHTML = '';
+            const defaultFallbackRate = parseFloat(appData.hourlyRate) || 50.00;
+            
             appData.slots.forEach((s, idx) => {
+                const slotRate = (s.rate !== undefined) ? parseFloat(s.rate) : defaultFallbackRate;
                 container.innerHTML += `
-                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2 rounded border border-slate-200">
-                        <span><strong>${s.name}</strong> <span class="text-slate-500">(${s.time})</span></span>
-                        ${appData.slots.length > 1 ? `<button onclick="removeSlot('${s.id}')" class="text-rose-600 hover:underline">Padam</button>` : ''}
+                    <div class="flex justify-between items-center text-xs bg-slate-50 p-2.5 rounded border border-slate-200 flex-wrap gap-2">
+                        <div>
+                            <strong>${s.name}</strong> <span class="text-slate-500">(${s.time})</span>
+                            <span class="ml-2 bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]">RM ${slotRate.toFixed(2)} / Jam</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button onclick="editSlotRate('${s.id}')" class="text-indigo-600 font-semibold hover:underline"><i class="fa-solid fa-pen-to-square"></i> Edit Rate</button>
+                            ${appData.slots.length > 1 ? `<button onclick="removeSlot('${s.id}')" class="text-rose-600 hover:underline">Padam</button>` : ''}
+                        </div>
                     </div>
                 `;
             });
         }
 
+        function editSlotRate(slotId) {
+            const slot = appData.slots.find(s => s.id === slotId);
+            if (!slot) return;
+            const currentRate = (slot.rate !== undefined) ? parseFloat(slot.rate) : (parseFloat(appData.hourlyRate) || 50.00);
+            const newRateStr = prompt(`Masukkan kadar bayaran sejam (RM) yang baharu untuk ${slot.name} (${slot.time}):`, currentRate.toFixed(2));
+            
+            if (newRateStr !== null) {
+                const parsed = parseFloat(newRateStr);
+                if (!isNaN(parsed) && parsed >= 0) {
+                    slot.rate = parsed;
+                    saveData();
+                    renderAdminSlotList();
+                    renderSlotButtons();
+                    alert(`Kadar untuk ${slot.name} berjaya ditukar kepada RM ${parsed.toFixed(2)} / jam!`);
+                } else {
+                    alert("Sila masukkan nilai nombor yang sah.");
+                }
+            }
+        }
+
         function addNewSlot() {
             const name = document.getElementById('newSlotName').value;
             const time = document.getElementById('newSlotTime').value;
+            const rateInput = parseFloat(document.getElementById('newSlotRate').value);
+            const rate = !isNaN(rateInput) && rateInput >= 0 ? rateInput : 50.00;
+
             if (name && time) {
                 const newId = 'slot_' + Date.now();
-                appData.slots.push({ id: newId, name, time });
+                appData.slots.push({ id: newId, name, time, rate });
                 saveData();
                 document.getElementById('newSlotName').value = '';
                 document.getElementById('newSlotTime').value = '';
+                document.getElementById('newSlotRate').value = '';
                 renderAdminSlotList();
                 renderSlotButtons();
                 populateAdminDropdowns();
-                alert("Slot Waktu Baharu Berjaya Ditambah!");
+                alert(`Slot Waktu Baharu Berjaya Ditambah dengan kadar RM ${rate.toFixed(2)}/jam!`);
             } else {
                 alert("Sila isi Nama Slot dan Masa.");
             }
