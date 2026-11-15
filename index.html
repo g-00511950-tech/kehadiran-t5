@@ -248,7 +248,7 @@
                     </div>
 
                     <!-- PAPARAN TERPERINCI INDIVIDU -->
-                    <div id="detailedClassAnalyticsView" class="hidden bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                    <div id="detailedClassAnalyticsView" class="hidden bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2 mb-3">
                         <h3 class="font-bold text-xs text-slate-700 border-b pb-2 flex justify-between items-center">
                             <span id="detailedTableTitle">Rekod Kehadiran Individu Pelajar</span>
                             <span id="detailedClassTitle" class="text-indigo-600 font-extrabold"></span>
@@ -269,26 +269,35 @@
                         </div>
                     </div>
 
-                    <!-- PAPARAN BUKTI REKOD GURU (TEACHER EVIDENCE) -->
+                    <!-- PAPARAN BUKTI REKOD GURU (TEACHER EVIDENCE & CLAIM) -->
                     <div id="teacherEvidenceView" class="hidden bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2 mb-3">
-                        <h3 class="font-bold text-xs text-slate-800 border-b pb-2 flex justify-between items-center">
-                            <span><i class="fa-solid fa-file-invoice text-emerald-600"></i> Senarai Sesi Kelas Yang Dijalankan</span>
-                            <span id="teacherEvidenceTitle" class="text-emerald-700 font-bold"></span>
-                        </h3>
+                        <div class="border-b pb-2 flex justify-between items-center flex-wrap gap-1">
+                            <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-invoice-dollar text-emerald-600"></i> Penyata Bukti Pelaksanaan & Tuntutan Bayaran Guru
+                            </h3>
+                            <div class="text-right">
+                                <span id="teacherEvidenceTitle" class="text-emerald-700 font-bold text-xs block"></span>
+                                <span id="teacherRateSubtitle" class="text-[10px] text-slate-500 font-semibold"></span>
+                            </div>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead>
                                     <tr class="bg-slate-100 text-slate-700 border-b">
-                                        <th class="p-2 w-8">No</th>
-                                        <th class="p-2 w-28">Tarikh</th>
-                                        <th class="p-2 w-44">Slot Masa</th>
-                                        <th class="p-2 w-28">Kelas</th>
+                                        <th class="p-2 w-8">Bil</th>
+                                        <th class="p-2 w-24">Tarikh</th>
+                                        <th class="p-2">Nama Kelas</th>
                                         <th class="p-2">Matapelajaran</th>
-                                        <th class="p-2 text-center w-28">Pelajar Hadir</th>
+                                        <th class="p-2">Waktu Mengajar</th>
+                                        <th class="p-2 text-center w-20">Durasi (Jam)</th>
+                                        <th class="p-2 text-right w-24">Kadar / Jam (RM)</th>
+                                        <th class="p-2 text-right w-28">Jumlah Tuntutan (RM)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="teacherEvidenceTableBody" class="divide-y divide-slate-100">
                                 </tbody>
+                                <tfoot id="teacherEvidenceTableFoot" class="bg-emerald-50 font-bold text-slate-800 border-t-2 border-emerald-200">
+                                </tfoot>
                             </table>
                         </div>
                     </div>
@@ -369,11 +378,35 @@
                         <h3 class="font-bold text-sm text-indigo-900 border-b pb-2 flex items-center gap-2">
                             <i class="fa-solid fa-clock text-indigo-600"></i> Pengurusan Slot Waktu Kelas Tambahan
                         </h3>
+                        <p class="text-[11px] text-slate-500 bg-amber-50 p-2 rounded border border-amber-200">
+                            <i class="fa-solid fa-circle-info text-amber-600"></i> <b>Tip Kiraan Jam Automatik:</b> Pastikan format masa ditulis seperti <b>2:30 PM - 3:30 PM</b> atau <b>8:00 PM - 9:30 PM</b> supaya sistem dapat mengira durasi jam & tuntutan secara tepat.
+                        </p>
                         <div id="adminSlotList" class="space-y-2"></div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <input type="text" id="newSlotName" placeholder="Nama Slot (Cth: Slot 4)" class="text-xs border border-slate-300 rounded p-2">
                             <input type="text" id="newSlotTime" placeholder="Masa (Cth: 4:30 PM - 5:30 PM)" class="text-xs border border-slate-300 rounded p-2">
                             <button onclick="addNewSlot()" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded font-medium hover:bg-emerald-700">+ Tambah Slot</button>
+                        </div>
+                    </div>
+
+                    <!-- PENGURUSAN KADAR TUNTUTAN BAYARAN (RATE PER JAM) -->
+                    <div class="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm text-emerald-900 border-b pb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-money-bill-wave text-emerald-600"></i> Tetapan Kadar Tuntutan Bayaran Kelas (Rate Per Jam)
+                        </h3>
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3 text-xs">
+                            <div class="flex-1">
+                                <label class="block font-medium text-slate-600 mb-1">Kadar Bayaran Sejam (RM):</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-2 font-bold text-slate-500">RM</span>
+                                    <input type="number" step="0.01" id="cfgHourlyRate" placeholder="50.00" class="w-full border border-slate-300 rounded p-2 pl-9 font-bold text-emerald-700">
+                                </div>
+                            </div>
+                            <div class="sm:pt-5">
+                                <button onclick="saveHourlyRate()" class="w-full sm:w-auto bg-emerald-600 text-white text-xs px-4 py-2.5 rounded font-bold hover:bg-emerald-700 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk"></i> Simpan Kadar Bayaran
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -545,6 +578,7 @@
             selectedSessionSubjects: {},
             allTeachers: ["Tiada Guru", "Cikgu Ali", "Cikgu Aminah"],
             selectedSessionTeachers: {},
+            hourlyRate: 50.00,
             students: [
                 { id: "s1", classId: "c1", name: "Ahmad Albab Bin Zulkifli" },
                 { id: "s2", classId: "c1", name: "Siti Nurhaliza Binti Abu" },
@@ -1150,22 +1184,27 @@
                 document.getElementById('statPeratus').innerText = (totalClassHadir + totalClassTakHadir) > 0 ? Math.round((totalClassHadir / (totalClassHadir + totalClassTakHadir)) * 100) + '%' : '0%';
 
             } else if (reportType === 'teacher_evidence') {
-                // MOD BUKTI PELAKSANAAN KELAS GURU
-                document.getElementById('printReportHeadline').innerText = `REKOD BUKTI PELAKSANAAN KELAS: ${selectedTeacher}`;
+                // MOD BUKTI PELAKSANAAN KELAS GURU & KIRAAN CLAIM
+                const hourlyRate = parseFloat(appData.hourlyRate) || 0;
+                document.getElementById('printReportHeadline').innerText = `PENYATA TUNTUTAN & BUKTI KELAS TAMBAHAN: ${selectedTeacher.toUpperCase()}`;
                 document.getElementById('dailySummaryTableView').classList.add('hidden');
                 document.getElementById('visualChartContainer').classList.add('hidden');
                 document.getElementById('detailedClassAnalyticsView').classList.add('hidden');
                 document.getElementById('teacherEvidenceView').classList.remove('hidden');
 
                 const selectedMonth = document.getElementById('analysisMonthFilter').value;
-                document.getElementById('teacherEvidenceTitle').innerText = `Bulan: ${selectedMonth}`;
+                document.getElementById('teacherEvidenceTitle').innerText = `Bulan Tuntutan: ${selectedMonth}`;
+                document.getElementById('teacherRateSubtitle').innerText = `Kadar Bayaran Semasa: RM ${hourlyRate.toFixed(2)} / Jam`;
 
                 const matchingDates = Object.keys(phaseRecords).filter(d => d.startsWith(selectedMonth)).sort();
                 const tbody = document.getElementById('teacherEvidenceTableBody');
+                const tfoot = document.getElementById('teacherEvidenceTableFoot');
                 tbody.innerHTML = '';
+                tfoot.innerHTML = '';
 
                 let sessionCount = 0;
-                let grandTotalStudentsHadir = 0;
+                let grandTotalHours = 0;
+                let grandTotalClaim = 0;
 
                 matchingDates.forEach(dateKey => {
                     appData.slots.forEach(slot => {
@@ -1191,16 +1230,25 @@
                                             if (!rec || rec.status === 'hadir') classHadirCount++;
                                         });
 
-                                        grandTotalStudentsHadir += classHadirCount;
+                                        // Kira durasi jam daripada teks masa slot (Cth: "2:30 PM - 3:30 PM")
+                                        const durationHours = calculateSlotDuration(slot.time);
+                                        const sessionClaim = durationHours * hourlyRate;
+
+                                        grandTotalHours += durationHours;
+                                        grandTotalClaim += sessionClaim;
 
                                         tbody.innerHTML += `
                                             <tr class="hover:bg-slate-50">
                                                 <td class="p-2 font-bold text-slate-400">${sessionCount}</td>
                                                 <td class="p-2 font-bold text-slate-700">${dateKey}</td>
-                                                <td class="p-2 font-medium text-slate-600">${slot.name} (${slot.time})</td>
                                                 <td class="p-2 font-bold text-indigo-700">${cls.name}</td>
-                                                <td class="p-2 font-medium text-slate-800">${subj}</td>
-                                                <td class="p-2 text-center font-bold text-emerald-600">${classHadirCount} / ${classStudents.length}</td>
+                                                <td class="p-2 font-medium text-slate-700">${subj}</td>
+                                                <td class="p-2 text-slate-600">
+                                                    <span class="font-bold text-slate-800">${slot.name}</span> (${slot.time})
+                                                </td>
+                                                <td class="p-2 text-center font-bold text-indigo-700">${durationHours.toFixed(1)}</td>
+                                                <td class="p-2 text-right text-slate-600">${hourlyRate.toFixed(2)}</td>
+                                                <td class="p-2 text-right font-extrabold text-emerald-700">${sessionClaim.toFixed(2)}</td>
                                             </tr>
                                         `;
                                     }
@@ -1211,19 +1259,64 @@
                 });
 
                 if (sessionCount === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">Tiada rekod pelaksanaan kelas ditemui bagi kriteria ini.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400 italic">Tiada rekod pelaksanaan kelas ditemui bagi kriteria ini.</td></tr>`;
+                } else {
+                    tfoot.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="p-2.5 text-right uppercase text-[11px] text-slate-700">Jumlah Keseluruhan (${sessionCount} Sesi):</td>
+                            <td class="p-2.5 text-center text-indigo-800 text-xs">${grandTotalHours.toFixed(1)} Jam</td>
+                            <td class="p-2.5 text-right text-slate-500 text-[11px]">-</td>
+                            <td class="p-2.5 text-right text-emerald-800 text-sm">RM ${grandTotalClaim.toFixed(2)}</td>
+                        </tr>
+                    `;
                 }
 
-                // Tukar Kad Statistik untuk Guru
+                // Tukar Kad Statistik untuk Paparan Claim Guru
                 document.getElementById('lblStatTotal').innerText = "Jumlah Sesi Kelas";
-                document.getElementById('lblStatHadir').innerText = "Jumlah Pelajar Hadir";
-                document.getElementById('lblStatTidakHadir').innerText = "Status Rekod";
-                document.getElementById('lblStatPeratus').innerText = "Purata Pelajar/Sesi";
+                document.getElementById('lblStatHadir').innerText = "Jumlah Jam Mengajar";
+                document.getElementById('lblStatTidakHadir').innerText = "Kadar Sejam";
+                document.getElementById('lblStatPeratus').innerText = "Jumlah Tuntutan";
 
-                document.getElementById('statTotal').innerText = sessionCount;
-                document.getElementById('statHadir').innerText = grandTotalStudentsHadir;
-                document.getElementById('statTidakHadir').innerText = sessionCount > 0 ? "Disahkan" : "Tiada Rekod";
-                document.getElementById('statPeratus').innerText = sessionCount > 0 ? Math.round(grandTotalStudentsHadir / sessionCount) : 0;
+                document.getElementById('statTotal').innerText = `${sessionCount} Sesi`;
+                document.getElementById('statHadir').innerText = `${grandTotalHours.toFixed(1)} Jam`;
+                document.getElementById('statTidakHadir').innerText = `RM ${hourlyRate.toFixed(2)}`;
+                document.getElementById('statPeratus').innerText = `RM ${grandTotalClaim.toFixed(2)}`;
+            }
+        }
+
+        // Fungsi Helper untuk mengira durasi jam daripada string masa slot (Cth: "2:30 PM - 3:30 PM")
+        function calculateSlotDuration(timeStr) {
+            if (!timeStr) return 1.0;
+            try {
+                const parts = timeStr.split('-');
+                if (parts.length !== 2) return 1.0;
+
+                const parseToMinutes = (t) => {
+                    t = t.trim().toUpperCase();
+                    const isPM = t.includes('PM');
+                    const isAM = t.includes('AM');
+                    t = t.replace('PM', '').replace('AM', '').trim();
+                    
+                    const timeParts = t.split(':');
+                    let hours = parseInt(timeParts[0], 10);
+                    let minutes = timeParts.length > 1 ? parseInt(timeParts[1], 10) : 0;
+
+                    if (isPM && hours < 12) hours += 12;
+                    if (isAM && hours === 12) hours = 0;
+
+                    return (hours * 60) + minutes;
+                };
+
+                const startMins = parseToMinutes(parts[0]);
+                let endMins = parseToMinutes(parts[1]);
+
+                // Jika merentasi tengah malam (jarang berlaku, tapi sebagai langkah berjaga-jaga)
+                if (endMins < startMins) endMins += 24 * 60;
+
+                const diffHours = (endMins - startMins) / 60;
+                return diffHours > 0 ? diffHours : 1.0;
+            } catch (e) {
+                return 1.0; // Default 1 jam jika format tidak dapat dibaca
             }
         }
 
@@ -1265,6 +1358,7 @@
                 document.getElementById('cfgSchoolName').value = appData.schoolName || '';
                 document.getElementById('cfgAppTitle').value = appData.appTitle || '';
                 document.getElementById('cfgSchoolLogo').value = appData.schoolLogo || '';
+                document.getElementById('cfgHourlyRate').value = (appData.hourlyRate !== undefined) ? appData.hourlyRate : 50.00;
                 renderAdminPhaseList();
                 renderAdminSubjectList();
                 renderAdminTeacherList();
@@ -1275,6 +1369,17 @@
                 renderAdminTracker();
             } else {
                 document.getElementById('pinErrorMsg').classList.remove('hidden');
+            }
+        }
+
+        function saveHourlyRate() {
+            const rateVal = parseFloat(document.getElementById('cfgHourlyRate').value);
+            if (!isNaN(rateVal) && rateVal >= 0) {
+                appData.hourlyRate = rateVal;
+                saveData();
+                alert(`Kadar bayaran berjaya dikemaskini kepada RM ${rateVal.toFixed(2)} / jam!`);
+            } else {
+                alert("Sila masukkan nilai kadar bayaran yang sah.");
             }
         }
 
